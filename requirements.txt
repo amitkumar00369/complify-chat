@@ -1,0 +1,16 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+sqlalchemy>=2.0
+pydantic>=2.7
+pydantic-settings>=2.3
+boto3>=1.34
+openai>=2.0
+pypdf>=4.0
+pdfplumber>=0.11
+openpyxl>=3.1
+reportlab>=4.0
+
+# dev / tests
+pytest>=8.0
+httpx>=0.27
