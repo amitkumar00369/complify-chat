@@ -1,16 +1,28 @@
-fastapi>=0.115
-uvicorn[standard]>=0.30
-python-multipart>=0.0.9
-sqlalchemy>=2.0
-pydantic>=2.7
-pydantic-settings>=2.3
-boto3>=1.34
-openai>=2.0
-pypdf>=4.0
-pdfplumber>=0.11
-openpyxl>=3.1
-reportlab>=4.0
+# Tested together on Python 3.13 (minimum versions; the tested version is in the comment)
 
-# dev / tests
-pytest>=8.0
-httpx>=0.27
+# --- API ---
+fastapi>=0.115               # tested 0.162.0
+uvicorn[standard]>=0.30      # tested 0.54.0
+python-multipart>=0.0.9      # tested 0.0.32
+pydantic>=2.7                # tested 2.13.5
+pydantic-settings>=2.3       # tested 2.16.2
+
+# --- Database (async) ---
+sqlalchemy[asyncio]>=2.0     # tested 2.1.6
+asyncpg>=0.29                # PostgreSQL driver, tested 0.32.0
+aiosqlite>=0.20              # SQLite for local dev / tests, tested 0.22.1
+
+# --- Storage / AI ---
+boto3>=1.34                  # S3, tested 1.43.121
+openai>=3.0                  # Responses + Conversations + structured parse, tested 3.41.0
+
+# --- PDF / Excel / reports ---
+pypdf>=4.0                   # tested 6.17.0
+pdfplumber>=0.11             # TRF clause tables, tested 0.11.10
+openpyxl>=3.1                # Excel output, tested 3.1.5
+reportlab>=4.0               # PDF output, tested 5.0.1
+
+# --- dev / tests ---
+pytest>=8.0                  # tested 9.1.1
+httpx>=0.27                  # tested 0.28.1
+moto[s3]>=5.0                # S3 mock for tests, tested 5.2.5

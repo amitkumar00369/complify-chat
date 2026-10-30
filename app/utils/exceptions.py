@@ -59,6 +59,11 @@ class AIServiceError(AppError):
     code = "ai_service_error"
 
 
+class AIQuotaError(AppError):
+    status_code = 402
+    code = "ai_credits_exhausted"
+
+
 def _err(status: int, code: str, message: str, headers: dict | None = None) -> JSONResponse:
     return JSONResponse(
         status_code=status, content={"error": {"code": code, "message": message}}, headers=headers

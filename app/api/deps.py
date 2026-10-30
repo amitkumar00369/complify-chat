@@ -1,5 +1,5 @@
 from fastapi import Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.controller.chat_controller import ChatController
 from app.controller.evaluation_controller import EvaluationController
@@ -18,13 +18,13 @@ def get_ai_dep() -> AIService:
 
 
 def get_standard_controller(
-    db: Session = Depends(get_db), storage: StorageBackend = Depends(get_storage_dep)
+    db: AsyncSession = Depends(get_db), storage: StorageBackend = Depends(get_storage_dep)
 ) -> StandardController:
     return StandardController(db, storage)
 
 
 def get_chat_controller(
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     storage: StorageBackend = Depends(get_storage_dep),
     ai: AIService = Depends(get_ai_dep),
 ) -> ChatController:
@@ -32,7 +32,7 @@ def get_chat_controller(
 
 
 def get_evaluation_controller(
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     storage: StorageBackend = Depends(get_storage_dep),
     ai: AIService = Depends(get_ai_dep),
 ) -> EvaluationController:

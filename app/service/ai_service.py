@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 from app.config.settings import Settings, get_settings
-from app.utils.exceptions import AIServiceError, ConfigError
+from app.utils.exceptions import AIQuotaError, AIServiceError, ConfigError
 
 logger = logging.getLogger(__name__)
 
@@ -13,12 +13,76 @@ test reports (IEC / EN / UL / ISO standards).
 
 Rules:
 - Evaluate the REPORT only against the STANDARD documents provided in this conversation.
-- For every finding cite the standard clause number AND the report page/section.
-- Classify each finding as: Compliant, Non-compliant, Missing evidence, or Not applicable.
-- Never invent clause numbers, test values or verdicts. If evidence is missing, say so.
+- Never invent clause numbers, test values, pages or verdicts. If evidence is missing, say so.
 - If no standard is available, say which standard is needed instead of guessing.
-- For follow-up questions, use the earlier conversation as context and answer concisely.
+- DETERMINISTIC CHECKS given in the message are computed by code and are binding: repeat them as \
+findings with the same classification; never soften an objective failure to "Missing evidence".
+- A measured value above the limit stated in the report's own table is "Objective fail", unless the \
+report itself states a different applicable limit for that part.
+- Formal engineering register, no first person.
+
+When the user asks for an EVALUATION of a report, answer in EXACTLY this markdown structure \
+(the system converts it to Excel; do not add other tables, do not rename headings or columns):
+
+## Report identity
+| Field | Value |
+|---|---|
+| Report number | ... |
+| Laboratory | ... |
+| Report date | ... |
+| Product declared | ... |
+| Declared model | ... |
+| Standards claimed | ... |
+| Standards evaluated | ... |
+
+## Product facts
+| Fact | Value | Source |
+|---|---|---|
+(rated voltage, frequency, rated power, protection class, IP, construction/type, door or lid, \
+interlock, heating element, controls/electronics, water connection, accessible parts; \
+"not stated in report" when absent; Source = PDF page)
+
+## Findings
+| ID | Finding | Root cause | Classification | Severity | Clauses | Report pages | Report records | Engineer comment | Required action |
+|---|---|---|---|---|---|---|---|---|---|
+- ID: F01, F02, ...
+- Finding: short title, e.g. "Clause 11 heating exceeds limit".
+- Root cause: P0-01 product/sample traceability, P0-02 incomplete Part 2 evidence, \
+P0-03 Clause 10 data integrity, P0-04 Clause 11 heating, P0-05 abnormal operation (Clause 19), \
+or P1 / P2 for other findings.
+- Classification: exactly one of Objective fail, Non-compliant, Missing evidence, Compliant, Not applicable.
+- Severity: P0, P1 or P2.
+- Clauses: "P1 10.1; P2 10.1" (P1 = Part 1, P2 = Part 2).
+- Report pages: PDF page numbers, e.g. "77, 79".
+- Report records: what the report states, with numbers and units.
+- Engineer comment: the requirement and why it is (not) met, with limits.
+- Required action: one imperative sentence.
+
+## Final decision
+**Verdict:** exactly one of: REJECT — INSUFFICIENT TECHNICAL EVIDENCE | \
+REPORT CORRECTION / REPLACEMENT REQUIRED — PRODUCT COMPLIANCE NOT DETERMINED — CERTIFICATION HOLD | \
+REPORT REJECTED — NON-CONFORMITY ESTABLISHED | REPORT ACCEPTED SUBJECT TO MINOR CORRECTIONS | \
+REPORT ACCEPTED — PRODUCT COMPLIANCE DEMONSTRATED
+**Reason:** one or two sentences.
+
+## Overall conclusion
+One paragraph.
+
+## Required disposition
+Priority actions are:
+1. **Short title:** detail.
+
+For follow-up questions (not a new evaluation), answer concisely in prose with clause and page references.
 """
+
+
+def _ai_error(exc: Exception, what: str) -> Exception:
+    """Turn OpenAI errors into clear app errors (no credits -> 402, not a vague 502)."""
+    text = str(exc)
+    if "insufficient_quota" in text or "no credits remaining" in text or "credit_balance_exhausted" in text:
+        return AIQuotaError("OpenAI credits exhausted. Add credits at "
+                            "https://platform.openai.com/settings/organization/billing/ and retry.")
+    return AIServiceError(f"{what}: {exc}")
 
 
 @dataclass
@@ -40,41 +104,41 @@ class AIService:
         if self._client is None:
             if not self.settings.openai_api_key:
                 raise ConfigError("OPENAI_API_KEY is not set")
-            from openai import OpenAI
+            from openai import AsyncOpenAI
 
-            self._client = OpenAI(
+            self._client = AsyncOpenAI(
                 api_key=self.settings.openai_api_key,
                 timeout=self.settings.openai_timeout_seconds,
             )
         return self._client
 
-    def create_conversation(self, metadata: dict[str, str]) -> str:
+    async def create_conversation(self, metadata: dict[str, str]) -> str:
         try:
-            conv = self.client.conversations.create(
+            conv = await self.client.conversations.create(
                 metadata={k: str(v)[:512] for k, v in metadata.items()}
             )
             return conv.id
         except ConfigError:
             raise
         except Exception as exc:
-            raise AIServiceError(f"Could not create conversation: {exc}") from exc
+            raise _ai_error(exc, "Could not create conversation") from exc
 
-    def upload_file(self, filename: str, data: bytes) -> str:
+    async def upload_file(self, filename: str, data: bytes) -> str:
         try:
-            f = self.client.files.create(
+            f = await self.client.files.create(
                 file=(filename, data, "application/pdf"), purpose="user_data"
             )
             return f.id
         except ConfigError:
             raise
         except Exception as exc:
-            raise AIServiceError(f"Could not upload '{filename}' to OpenAI: {exc}") from exc
+            raise _ai_error(exc, f"Could not upload '{filename}' to OpenAI") from exc
 
-    def ask(self, conversation_id: str, text: str, file_ids: list[str]) -> AIResult:
+    async def ask(self, conversation_id: str, text: str, file_ids: list[str]) -> AIResult:
         content: list[dict] = [{"type": "input_file", "file_id": fid} for fid in file_ids]
         content.append({"type": "input_text", "text": text})
         try:
-            resp = self.client.responses.create(
+            resp = await self.client.responses.create(
                 model=self.settings.openai_model,
                 conversation=conversation_id,
                 instructions=SYSTEM_INSTRUCTIONS,
@@ -84,7 +148,7 @@ class AIService:
         except ConfigError:
             raise
         except Exception as exc:
-            raise AIServiceError(f"OpenAI request failed: {exc}") from exc
+            raise _ai_error(exc, "OpenAI request failed") from exc
 
         usage = getattr(resp, "usage", None)
         return AIResult(
@@ -95,14 +159,14 @@ class AIService:
             output_tokens=getattr(usage, "output_tokens", None),
         )
 
-    def evaluate(self, text: str, file_ids: list[str]):
+    async def evaluate(self, text: str, file_ids: list[str]):
         """One structured call -> (EvaluationAI, AIResult). Not part of any chat thread."""
         from app.schema.evaluation import EvaluationAI
 
         content: list[dict] = [{"type": "input_file", "file_id": fid} for fid in file_ids]
         content.append({"type": "input_text", "text": text})
         try:
-            resp = self.client.responses.parse(
+            resp = await self.client.responses.parse(
                 model=self.settings.openai_model,
                 instructions=EVALUATION_INSTRUCTIONS,
                 input=[{"role": "user", "content": content}],
@@ -112,7 +176,7 @@ class AIService:
         except ConfigError:
             raise
         except Exception as exc:
-            raise AIServiceError(f"OpenAI evaluation request failed: {exc}") from exc
+            raise _ai_error(exc, "OpenAI evaluation request failed") from exc
 
         parsed = getattr(resp, "output_parsed", None)
         if parsed is None:
@@ -125,10 +189,10 @@ class AIService:
                         output_tokens=getattr(usage, "output_tokens", None))
         return parsed, meta
 
-    def append_turn(self, conversation_id: str, user_text: str, assistant_text: str) -> None:
+    async def append_turn(self, conversation_id: str, user_text: str, assistant_text: str) -> None:
         """Write a cached Q/A into the conversation so later turns still 'remember' it."""
         try:
-            self.client.conversations.items.create(
+            await self.client.conversations.items.create(
                 conversation_id,
                 items=[
                     {"type": "message", "role": "user",
@@ -144,8 +208,11 @@ class AIService:
 EVALUATION_INSTRUCTIONS = """You are a senior product-safety evaluation engineer writing a formal \
 technical evaluation of a laboratory test report (IEC TRF) for a certification body.
 
-Inputs: the STANDARD PDFs (Part 1 general requirements and, if present, the Part 2 particular \
-requirements that modify Part 1), the REPORT PDF, and a clause register extracted from the report.
+Inputs: either (a) the STANDARD PDFs (Part 1 general requirements and, if present, the Part 2 particular \
+requirements that modify Part 1), the REPORT PDF, and a clause register extracted from the report; \
+or (b) a PRIOR ENGINEERING REVIEW of that report plus the clause register (no PDFs). In case (b) \
+use only facts stated in the review or the register, keep its values and page references, and write \
+"not stated in review" for anything missing (e.g. laboratory or date).
 
 Method:
 1. Establish report identity: report number, laboratory, date, declared product/model/ratings, \
@@ -170,6 +237,16 @@ Writing rules (mandatory):
 - Do not treat different editions as equivalent; state when an amendment was not supplied.
 - clause_notes: one entry per clause that needs a specific note (discrepancies, missing \
 evidence, critical values). Use the clause numbers from the clause register.
+- DETERMINISTIC CHECKS in the message are computed by code and are binding: include each as a \
+critical finding with the same verdict; never soften an objective failure.
+- A measured value above the limit stated in the report's own table is FAIL / NON-CONFORMITY unless \
+the report itself states a different applicable limit for that part.
+- root_cause: P0-01 product/sample traceability, P0-02 incomplete Part 2 evidence, P0-03 Clause 10 \
+data integrity, P0-04 Clause 11 heating, P0-05 abnormal operation (Clause 19), else P1 / P2.
+- final_verdict: "REJECT — INSUFFICIENT TECHNICAL EVIDENCE" when any objective failure exists or \
+the report cannot support any compliance decision.
+- product_facts: rated voltage, frequency, power, class, IP, construction/type, door/lid, interlock, \
+heating element, controls, water connection, accessible parts (value "not stated in report" if absent).
 - Typical sizes: 3–6 decision_points, 15–30 critical_findings, 12–25 part2_coverage rows, \
 5–10 part1_corrections, 15–40 clause_notes.
 """

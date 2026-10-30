@@ -23,6 +23,15 @@ class Usage(BaseModel):
     output_tokens: int | None = None
 
 
+class ChatEvaluationOut(BaseModel):
+    evaluation_id: str
+    final_verdict: str | None
+    pdf_path: str | None
+    xlsx_path: str | None
+    download_pdf: str
+    download_xlsx: str
+
+
 class ChatResponse(BaseModel):
     chat_id: str
     user_id: str
@@ -38,6 +47,8 @@ class ChatResponse(BaseModel):
     standards_auto_detected: bool
     warnings: list[str] = []
     usage: Usage | None = None
+    reused_existing_output: bool = False          # same report evaluated before -> no AI call, $0
+    evaluation: ChatEvaluationOut | None = None   # Excel + PDF built from this answer
 
 
 class ChatSessionOut(BaseModel):

@@ -1,13 +1,15 @@
+import asyncio
 import logging
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.settings import get_settings
 from app.models import Report, ReportFile, Standard
 from app.models.base import new_id, utcnow
 from app.service.ai_service import AIResult, AIService
 from app.service.storage_service import StorageBackend
+from app.utils.exceptions import StorageError
 from app.utils.pdf_utils import detect_standards, extract_text, format_ref, safe_filename, sha256_hex
 from app.utils.text_utils import normalize_prompt, similarity, standards_key
 
@@ -15,45 +17,51 @@ logger = logging.getLogger(__name__)
 
 
 class ReportService:
-    def __init__(self, db: Session, storage: StorageBackend):
+    def __init__(self, db: AsyncSession, storage: StorageBackend):
         self.db = db
         self.storage = storage
         self.settings = get_settings()
 
     # ---------- report files ----------
-    def register_file(self, data: bytes, filename: str) -> ReportFile:
+    async def register_file(self, data: bytes, filename: str) -> ReportFile:
         """reports/{id}/{filename}.pdf  (same file again -> existing row, no new copy)."""
         sha = sha256_hex(data)
-        existing = self.db.scalar(select(ReportFile).where(ReportFile.sha256 == sha))
+        existing = await self.db.scalar(select(ReportFile).where(ReportFile.sha256 == sha))
         if existing:
+            if not await self.storage.exists(existing.storage_key):      # DB row survived, file was deleted
+                logger.warning("Report file missing on disk, restoring %s", existing.storage_key)
+                await self.storage.put(existing.storage_key, data, metadata={"original_filename": filename})
             return existing
 
         rf_id = new_id()
         stem = safe_filename(filename.rsplit(".", 1)[0])
         key = f"{self.settings.reports_prefix}{rf_id}/{stem}.pdf"
-        self.storage.put(key, data, metadata={"original_filename": filename})
+        await self.storage.put(key, data, metadata={"original_filename": filename})
 
         detected = [format_ref(d.name, d.edition)
-                    for d in detect_standards(extract_text(data, max_pages=5))]
+                    for d in detect_standards(await asyncio.to_thread(extract_text, data, 5))]
         rf = ReportFile(
             id=rf_id, original_filename=filename, storage_key=key, sha256=sha,
             size_bytes=len(data), detected_standards=detected,
         )
         self.db.add(rf)
-        self.db.commit()
+        await self.db.commit()
         logger.info("Registered report %s at %s, detected standards: %s", filename, key, detected)
         return rf
 
-    def ensure_openai_file(self, rf: ReportFile, ai: AIService) -> str:
+    async def ensure_openai_file(self, rf: ReportFile, ai: AIService) -> str:
         if rf.openai_file_id:
             return rf.openai_file_id
-        data = self.storage.get(rf.storage_key)
-        rf.openai_file_id = ai.upload_file(rf.original_filename, data)
-        self.db.commit()
+        if not await self.storage.exists(rf.storage_key):
+            raise StorageError(f"Report PDF is missing on disk ({rf.storage_key}). "
+                               "Upload the report again in this request (report_file) to restore it.")
+        data = await self.storage.get(rf.storage_key)
+        rf.openai_file_id = await ai.upload_file(rf.original_filename, data)
+        await self.db.commit()
         return rf.openai_file_id
 
     # ---------- cache ----------
-    def find_cached(self, report_file_id: str, standard_ids: list[str], prompt: str) -> Report | None:
+    async def find_cached(self, report_file_id: str, standard_ids: list[str], prompt: str) -> Report | None:
         """Same report + same standards + same (normalised) prompt -> stored output."""
         norm = normalize_prompt(prompt)
         base = select(Report).where(
@@ -63,11 +71,11 @@ class ReportService:
         threshold = self.settings.cache_similarity_threshold
 
         if threshold >= 1.0:
-            hit = self.db.scalar(
+            hit = await self.db.scalar(
                 base.where(Report.prompt_normalized == norm).order_by(Report.created_at.desc())
             )
         else:
-            candidates = self.db.scalars(base.order_by(Report.created_at.desc()).limit(200))
+            candidates = await self.db.scalars(base.order_by(Report.created_at.desc()).limit(200))
             best, best_score = None, 0.0
             for c in candidates:
                 score = similarity(norm, c.prompt_normalized)
@@ -77,10 +85,10 @@ class ReportService:
 
         if hit:
             hit.cache_hits += 1
-            self.db.commit()
+            await self.db.commit()
         return hit
 
-    def save_analysis(self, *, user_id: str, chat_id: str, rf: ReportFile,
+    async def save_analysis(self, *, user_id: str, chat_id: str, rf: ReportFile,
                       standards: list[Standard], prompt: str, result: AIResult) -> Report:
         """DB row + result file next to the report: reports/{rf_id}/outputs/{id}.md"""
         ids = [s.id for s in standards]
@@ -94,17 +102,17 @@ class ReportService:
             input_tokens=result.input_tokens, output_tokens=result.output_tokens,
         )
         key = f"{self.settings.reports_prefix}{rf.id}/outputs/{row.id}.md"
-        self.storage.put(key, _output_markdown(row, rf).encode("utf-8"),
+        await self.storage.put(key, _output_markdown(row, rf).encode("utf-8"),
                          content_type="text/markdown")
         row.output_path = key
         self.db.add(row)
         return row
 
-    def list_all(self, user_id: str, chat_id: str | None = None, limit: int = 50) -> "list[Report]":
+    async def list_all(self, user_id: str, chat_id: str | None = None, limit: int = 50) -> "list[Report]":
         stmt = select(Report).where(Report.user_id == user_id)
         if chat_id:
             stmt = stmt.where(Report.chat_id == chat_id)
-        return list(self.db.scalars(stmt.order_by(Report.created_at.desc()).limit(limit)))
+        return list(await self.db.scalars(stmt.order_by(Report.created_at.desc()).limit(limit)))
 
 
 def _output_markdown(row: Report, rf: ReportFile) -> str:

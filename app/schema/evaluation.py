@@ -9,6 +9,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 FinalVerdict = Literal[
+    "REJECT — INSUFFICIENT TECHNICAL EVIDENCE",
     "REPORT ACCEPTED — PRODUCT COMPLIANCE DEMONSTRATED",
     "REPORT ACCEPTED SUBJECT TO MINOR CORRECTIONS",
     "REPORT CORRECTION / REPLACEMENT REQUIRED — PRODUCT COMPLIANCE NOT DETERMINED — CERTIFICATION HOLD",
@@ -40,7 +41,16 @@ class DecisionPoint(_Strict):
     required_resolution: str
 
 
+class ProductFact(_Strict):
+    fact: str = Field(description="e.g. 'Loading type', 'Door interlock', 'Rated power'")
+    value: str = Field(description="Value as stated in the report, or 'not stated in report'")
+    source: str = Field(description="e.g. 'PDF p.4' or 'photo PDF p.83'")
+
+
 class CriticalFinding(_Strict):
+    root_cause: str = Field(description="Root-cause group: P0-01 traceability, P0-02 Part 2 evidence, "
+                                        "P0-03 Clause 10 integrity, P0-04 heating, P0-05 abnormal operation, "
+                                        "or P1 / P2 for other findings")
     clause_or_concern: str = Field(description="e.g. '10.1 Power input' or 'Identity: declared versus tested'")
     report_condition: str = Field(description="What the report records, with numbers and units")
     engineer_comments: str
@@ -84,6 +94,7 @@ class EvaluationAI(_Strict):
     reason: str
     tested_model_matches_declared: bool = Field(description="False if the tested sample/model/rating differs from the declared product")
     declared_model: str
+    product_facts: list[ProductFact] = Field(description="Authoritative product facts used for applicability")
     decision_points: list[DecisionPoint]
     final_technical_conclusion: str
     critical_findings: list[CriticalFinding]

@@ -80,7 +80,7 @@ def _verdict_color(text: str):
 
 
 RISK_BG = {"Critical": "#f8d7da", "High": "#fde5cd", "Medium": "#fff3cd", "Low": "#d1e7dd",
-           "P0": "#f8d7da", "P1": "#fde5cd", "P2": "#fff3cd"}
+           "P0": "#f8d7da", "P1": "#fde5cd", "P2": "#fff3cd", **{f"P0-0{i}": "#f8d7da" for i in range(1, 6)}}
 
 
 # ---------------------------------------------------------------- page numbering
@@ -232,6 +232,11 @@ def render_pdf(doc: EvaluationDocument) -> bytes:
                ("Evaluation basis", ai.evaluation_basis), ("Final verdict", ai.final_verdict),
                ("Reason", ai.reason)]
     story.append(_table(st, brand, ["Item", "Detail"], summary, [48 * mm, W - 48 * mm]))
+    if ai.product_facts:
+        story.append(Paragraph("Product facts (basis for applicability)", st["h2"]))
+        story.append(_table(st, brand, ["Fact", "Value", "Source"],
+                            [[p.fact, p.value, p.source] for p in ai.product_facts],
+                            [48 * mm, W - 48 * mm - 40 * mm, 40 * mm]))
 
     story.append(Paragraph("2. Report-Validity Decision Points", st["h1"]))
     story.append(_table(st, brand, ["Priority", "Decision point", "Finding", "Required resolution"],
@@ -240,11 +245,11 @@ def render_pdf(doc: EvaluationDocument) -> bytes:
 
     story += [PageBreak(), Paragraph("3. Critical Findings", st["h1"])]
     story.append(_table(st, brand,
-                        ["Clause / concern", "Report condition", "Evaluation comments", "Required verdict",
-                         "Required action", "Reference"],
-                        [[f.clause_or_concern, f.report_condition, f.engineer_comments, f.required_verdict,
-                          f.required_action, f.report_reference] for f in ai.critical_findings],
-                        [W * x for x in (0.13, 0.20, 0.22, 0.12, 0.23, 0.10)], color_cols=(3,)))
+                        ["Root cause", "Clause / concern", "Report condition", "Evaluation comments",
+                         "Required verdict", "Required action", "Reference"],
+                        [[f.root_cause, f.clause_or_concern, f.report_condition, f.engineer_comments,
+                          f.required_verdict, f.required_action, f.report_reference] for f in ai.critical_findings],
+                        [W * x for x in (0.06, 0.13, 0.19, 0.21, 0.11, 0.21, 0.09)], color_cols=(4,), risk_cols=(0,)))
 
     story += [PageBreak(), Paragraph(f"4. {doc.part2_label} Coverage", st["h1"])]
     story.append(_table(st, brand,

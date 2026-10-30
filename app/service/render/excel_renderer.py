@@ -17,7 +17,8 @@ VERDICT_FILL = {
     "CONDITIONAL": "FFFFF2CC", "INSUFFICIENT": "FFFFF2CC", "REVIEW": "FFFFF2CC",
     "PASS": "FFD9EAD3", "ACCEPTED": "FFD9EAD3",
 }
-RISK_FILL = {"Critical": "FFF8D7DA", "High": "FFFCE5CD", "Medium": "FFFFF2CC", "Low": "FFD9EAD3"}
+RISK_FILL = {"Critical": "FFF8D7DA", "High": "FFFCE5CD", "Medium": "FFFFF2CC", "Low": "FFD9EAD3",
+             **{f"P0-0{i}": "FFF8D7DA" for i in range(1, 6)}, "P1": "FFFCE5CD", "P2": "FFFFF2CC"}
 
 
 def _hex(color: str) -> str:
@@ -97,6 +98,19 @@ def render_xlsx(doc: EvaluationDocument) -> bytes:
             fill = _verdict_fill(v)
             if fill:
                 ws.cell(row=r, column=2).fill = fill
+    if ai.product_facts:
+        ws.append([])
+        ws.append(["Product Facts (basis for applicability)"])
+        r = ws.max_row
+        ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=8)
+        ws.cell(row=r, column=1).font = Font(bold=True, color="FFFFFFFF")
+        ws.cell(row=r, column=1).fill = hfill
+        for pf in ai.product_facts:
+            ws.append([pf.fact, pf.value, pf.source])
+            r = ws.max_row
+            ws.cell(row=r, column=1).font = label_font
+            for c in (2, 3):
+                ws.cell(row=r, column=c).alignment = WRAP
     ws.append([])
     ws.append(["Major Non-Conformity / Report-Validity Decision Points"])
     r = ws.max_row
@@ -124,11 +138,11 @@ def render_xlsx(doc: EvaluationDocument) -> bytes:
 
     # ---- Critical Findings ----
     _table(wb.create_sheet("Critical Findings"),
-           ["Clause / concern", "Report condition", "Evaluation Engineer comments", "Required verdict",
+           ["Root cause", "Clause / concern", "Report condition", "Evaluation Engineer comments", "Required verdict",
             "Required action", "Report reference"],
-           [[f.clause_or_concern, f.report_condition, f.engineer_comments, f.required_verdict,
+           [[f.root_cause, f.clause_or_concern, f.report_condition, f.engineer_comments, f.required_verdict,
              f.required_action, f.report_reference] for f in ai.critical_findings],
-           [31, 65, 72, 28, 70, 22], hfill, color_col=3)
+           [11, 31, 65, 72, 28, 70, 22], hfill, color_col=4, risk_col=0)
 
     # ---- Part 2-x Coverage ----
     _table(wb.create_sheet(f"{doc.part2_label} Coverage"[:31]),

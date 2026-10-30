@@ -7,6 +7,7 @@ A_PARENT = "REVIEW—PARENT"
 A_NA = "REPORTED N/A—APPLICABILITY TO CONFIRM"
 A_FAIL = "REPORTED FAIL—NON-CONFORMITY"
 A_NONE = "VERDICT NOT STATED—TO CONFIRM"
+A_GAP = "NOT IN REPORT—GAP"
 
 EV_UNVERIFIED = "Report extraction; source attribution not independently verified"
 EV_ACCEPTED = "Report extraction; consistent with declared product"
@@ -44,4 +45,16 @@ def build_clause_review(rows: list[ClauseRow], notes: list[ClauseNote],
             assessment=assessment, required_verification=verification,
             pdf_page=r.page_ref, evidence_status=evidence,
         ))
+
+    # requirements the evaluation flags but the report's clause table does not contain at all
+    present = {r.clause for r in rows}
+    for n in notes:
+        c = n.clause.strip()
+        # clauses 1-5 are scope/definitions/general conditions, not testable requirements
+        if n.critical and "." in c and c not in present and c.split(".")[0].isdigit() and int(c.split(".")[0]) >= 6:
+            out.append(ClauseReviewRow(
+                clause=c, topic="Not found in report clause table", report_verdict="—",
+                assessment=A_GAP, required_verification=f"MISSING: {n.note}", pdf_page="—",
+                evidence_status="Requirement absent from report; evidence/applicability to be supplied",
+            ))
     return out

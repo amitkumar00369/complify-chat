@@ -3,7 +3,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -20,8 +20,10 @@ class Settings(BaseSettings):
     api_prefix: str = "/api/v1"
     log_level: str = "INFO"
 
-    # --- database (SQLite file lives OUTSIDE app/, in ./data) ---
+    # --- database: PostgreSQL (postgresql+asyncpg://...) or SQLite file in ./data for local dev ---
     database_url: str = f"sqlite:///{(BASE_DIR / 'data' / 'complify.db').as_posix()}"
+    db_pool_size: int = 10
+    db_max_overflow: int = 20
 
     # --- storage (local for now; s3 kept ready for later) ---
     storage_backend: Literal["local", "s3"] = "local"
@@ -63,6 +65,26 @@ class Settings(BaseSettings):
     # 1.0 = exact match after normalisation. Lower (e.g. 0.95) allows fuzzy
     # matches, but "clause 10.1" vs "clause 10.2" would ALSO match — be careful.
     cache_similarity_threshold: float = Field(default=1.0, ge=0.5, le=1.0)
+
+    # --- chat -> Excel/PDF ---
+    auto_export_chat_evaluation: bool = True   # chat evaluation answer -> Excel + PDF in the same response (no AI)
+    reuse_report_output: bool = True           # same report uploaded again -> return the stored evaluation (no AI)
+
+    @field_validator("local_storage_dir")
+    @classmethod
+    def _abs_storage(cls, v: Path) -> Path:
+        v = Path(v)
+        return v if v.is_absolute() else (BASE_DIR / v).resolve()
+
+    @field_validator("database_url")
+    @classmethod
+    def _abs_sqlite(cls, v: str) -> str:
+        prefix = next((p for p in ("sqlite+aiosqlite:///", "sqlite:///") if v.startswith(p)), None)
+        if prefix and not v.startswith(prefix + "/") and ":memory:" not in v:
+            rel = v[len(prefix):]
+            if not Path(rel).is_absolute():
+                return prefix + (BASE_DIR / rel).resolve().as_posix()
+        return v
 
     @property
     def max_upload_bytes(self) -> int:

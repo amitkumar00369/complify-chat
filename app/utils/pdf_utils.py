@@ -28,10 +28,10 @@ class DetectedStandard:
     edition: str | None = None
 
 
-def read_pdf_upload(upload: UploadFile, max_bytes: int) -> UploadedPdf:
-    """Read an UploadFile fully, enforcing size + PDF signature."""
+async def read_pdf_upload(upload: UploadFile, max_bytes: int) -> UploadedPdf:
+    """Read an UploadFile fully (async), enforcing size + PDF signature."""
     filename = (upload.filename or "file.pdf").replace("\\", "/").split("/")[-1]
-    data = upload.file.read(max_bytes + 1)
+    data = await upload.read(max_bytes + 1)
     if not data:
         raise BadRequestError(f"'{filename}' is empty")
     if len(data) > max_bytes:

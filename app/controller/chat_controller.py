@@ -1,11 +1,11 @@
 import json
 
 from fastapi import UploadFile
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.settings import get_settings
 from app.schema.chat import (
-    ChatMessageOut, ChatResponse, ChatSessionOut, ReportFileOut, ReportOut, StandardRef, Usage,
+    ChatEvaluationOut, ChatMessageOut, ChatResponse, ChatSessionOut, ReportFileOut, ReportOut, StandardRef, Usage,
 )
 from app.service.ai_service import AIService
 from app.service.analysis_service import AnalysisService, ChatInput
@@ -33,15 +33,15 @@ def parse_id_list(raw: str | None) -> list[str]:
 
 
 class ChatController:
-    def __init__(self, db: Session, storage: StorageBackend, ai: AIService):
+    def __init__(self, db: AsyncSession, storage: StorageBackend, ai: AIService):
         self.db = db
         self.storage = storage
         self.ai = ai
         self.settings = get_settings()
 
-    def chat(self, *, user_id: str, query: str, chat_id: str | None,
+    async def chat(self, *, user_id: str, query: str, chat_id: str | None,
              report_file: UploadFile | None, standard_files: list[UploadFile] | None,
-             standard_ids: str | None, use_cache: bool) -> ChatResponse:
+             standard_ids: str | None, use_cache: bool, reuse_report_output: bool = True) -> ChatResponse:
         user_id, query = user_id.strip(), query.strip()
         if not user_id:
             raise BadRequestError("user_id is required")
@@ -61,12 +61,13 @@ class ChatController:
             user_id=user_id,
             query=query,
             chat_id=(chat_id or "").strip() or None,
-            report=read_pdf_upload(report_file, max_bytes) if report_file and report_file.filename else None,
-            standard_files=[read_pdf_upload(f, max_bytes) for f in files],
+            report=await read_pdf_upload(report_file, max_bytes) if report_file and report_file.filename else None,
+            standard_files=[await read_pdf_upload(f, max_bytes) for f in files],
             standard_ids=ids,
             use_cache=use_cache,
+            reuse_report_output=reuse_report_output,
         )
-        out = AnalysisService(self.db, self.storage, self.ai).handle(inp)
+        out = await AnalysisService(self.db, self.storage, self.ai).handle(inp)
 
         warnings = list(out.warnings)
         rf = out.report_file
@@ -79,6 +80,12 @@ class ChatController:
             warnings.append("No report or standard in this chat yet - answered as a general question.")
 
         r = out.ai_result
+        ev = out.evaluation
+        dl = f"{self.settings.api_prefix}/evaluations/{ev.id}/download" if ev else ""
+        evaluation = ChatEvaluationOut(
+            evaluation_id=ev.id, final_verdict=ev.final_verdict, pdf_path=ev.pdf_path, xlsx_path=ev.xlsx_path,
+            download_pdf=f"{dl}/pdf?user_id={out.chat.user_id}",
+            download_xlsx=f"{dl}/xlsx?user_id={out.chat.user_id}") if ev else None
         return ChatResponse(
             chat_id=out.chat.id,
             user_id=out.chat.user_id,
@@ -96,16 +103,18 @@ class ChatController:
             standards_auto_detected=out.standards_auto_detected,
             warnings=warnings,
             usage=Usage(model=r.model, input_tokens=r.input_tokens, output_tokens=r.output_tokens) if r else None,
+            reused_existing_output=out.reused_existing_output,
+            evaluation=evaluation,
         )
 
-    def list_sessions(self, user_id: str, limit: int, offset: int) -> list[ChatSessionOut]:
+    async def list_sessions(self, user_id: str, limit: int, offset: int) -> list[ChatSessionOut]:
         return [ChatSessionOut.model_validate(c)
-                for c in ChatService(self.db).list_sessions(user_id, limit, offset)]
+                for c in await ChatService(self.db).list_sessions(user_id, limit, offset)]
 
-    def list_messages(self, chat_id: str, user_id: str) -> list[ChatMessageOut]:
+    async def list_messages(self, chat_id: str, user_id: str) -> list[ChatMessageOut]:
         return [ChatMessageOut.model_validate(m)
-                for m in ChatService(self.db).list_messages(chat_id, user_id)]
+                for m in await ChatService(self.db).list_messages(chat_id, user_id)]
 
-    def list_reports(self, user_id: str, chat_id: str | None, limit: int) -> list[ReportOut]:
+    async def list_reports(self, user_id: str, chat_id: str | None, limit: int) -> list[ReportOut]:
         return [ReportOut.model_validate(r)
-                for r in ReportService(self.db, self.storage).list_all(user_id, chat_id, limit)]
+                for r in await ReportService(self.db, self.storage).list_all(user_id, chat_id, limit)]
