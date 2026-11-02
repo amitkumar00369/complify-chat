@@ -24,6 +24,8 @@ class StorageBackend(Protocol):
 
     async def exists(self, key: str) -> bool: ...
 
+    async def delete(self, key: str) -> None: ...
+
 
 class S3Storage:
     def __init__(self, bucket: str, region: str, access_key: str | None,
@@ -66,6 +68,12 @@ class S3Storage:
         except Exception:
             return False
 
+    async def delete(self, key):
+        try:
+            await asyncio.to_thread(self.client.delete_object, Bucket=self.bucket, Key=key)
+        except Exception as exc:
+            raise StorageError(f"S3 delete failed for '{key}': {exc}") from exc
+
 
 class LocalStorage:
     def __init__(self, root: Path):
@@ -94,6 +102,14 @@ class LocalStorage:
 
     async def exists(self, key):
         return self._path(key).exists()
+
+    async def delete(self, key):
+        path = self._path(key)
+        await asyncio.to_thread(path.unlink, True)            # missing_ok=True
+        parent = path.parent                                  # remove now-empty folders up to the root
+        while parent != self.root.resolve() and parent.exists() and not any(parent.iterdir()):
+            parent.rmdir()
+            parent = parent.parent
 
 
 @lru_cache

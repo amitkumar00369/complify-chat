@@ -24,7 +24,8 @@ class ReportService:
 
     # ---------- report files ----------
     async def register_file(self, data: bytes, filename: str) -> ReportFile:
-        """reports/{id}/{filename}.pdf  (same file again -> existing row, no new copy)."""
+        """reports/<report name>/<report name>.pdf  (same file again -> existing row, no new copy).
+        Another report with the same name gets reports/<report name>_<id8>/."""
         sha = sha256_hex(data)
         existing = await self.db.scalar(select(ReportFile).where(ReportFile.sha256 == sha))
         if existing:
@@ -35,7 +36,10 @@ class ReportService:
 
         rf_id = new_id()
         stem = safe_filename(filename.rsplit(".", 1)[0])
-        key = f"{self.settings.reports_prefix}{rf_id}/{stem}.pdf"
+        key = f"{self.settings.reports_prefix}{stem}/{stem}.pdf"
+        taken = await self.db.scalar(select(ReportFile.id).where(ReportFile.storage_key == key))
+        if taken or await self.storage.exists(key):           # same name, different file
+            key = f"{self.settings.reports_prefix}{stem}_{rf_id[:8]}/{stem}.pdf"
         await self.storage.put(key, data, metadata={"original_filename": filename})
 
         detected = [format_ref(d.name, d.edition)
@@ -90,7 +94,7 @@ class ReportService:
 
     async def save_analysis(self, *, user_id: str, chat_id: str, rf: ReportFile,
                       standards: list[Standard], prompt: str, result: AIResult) -> Report:
-        """DB row + result file next to the report: reports/{rf_id}/outputs/{id}.md"""
+        """DB row + result file next to the report: reports/<report name>/outputs/{id}.md"""
         ids = [s.id for s in standards]
         row = Report(
             id=new_id(), user_id=user_id, chat_id=chat_id, report_file_id=rf.id,
@@ -101,7 +105,7 @@ class ReportService:
             output=result.text, model=result.model,
             input_tokens=result.input_tokens, output_tokens=result.output_tokens,
         )
-        key = f"{self.settings.reports_prefix}{rf.id}/outputs/{row.id}.md"
+        key = f"{report_dir(rf)}outputs/{row.id}.md"
         await self.storage.put(key, _output_markdown(row, rf).encode("utf-8"),
                          content_type="text/markdown")
         row.output_path = key
@@ -113,6 +117,11 @@ class ReportService:
         if chat_id:
             stmt = stmt.where(Report.chat_id == chat_id)
         return list(await self.db.scalars(stmt.order_by(Report.created_at.desc()).limit(limit)))
+
+
+def report_dir(rf: ReportFile) -> str:
+    """Folder of a report = the folder its PDF is in (reports/<report name>/)."""
+    return rf.storage_key.rsplit("/", 1)[0] + "/"
 
 
 def _output_markdown(row: Report, rf: ReportFile) -> str:

@@ -51,6 +51,13 @@ async def get_evaluation(evaluation_id: str, user_id: str | None = Query(None),
     return await ctrl.get(evaluation_id, user_id)
 
 
+@router.get("/{evaluation_id}/json")
+async def evaluation_as_json(evaluation_id: str, user_id: str | None = Query(None),
+                             ctrl: EvaluationController = Depends(get_evaluation_controller)):
+    """One JSON = the AI output: report, summary, findings{critical,high,medium,low}."""
+    return await ctrl.as_json(evaluation_id, user_id)
+
+
 @router.get("/{evaluation_id}/download/{fmt}")
 async def download_evaluation(evaluation_id: str, fmt: str, user_id: str | None = Query(None),
                         ctrl: EvaluationController = Depends(get_evaluation_controller)):

@@ -18,6 +18,9 @@ setup_logging(settings.log_level)
 async def lifespan(_: FastAPI):
     await init_db()
     yield
+    from app.db.database import engine
+
+    await engine.dispose()
 
 
 app = FastAPI(title=settings.app_name, version="1.0.0", lifespan=lifespan)
@@ -36,8 +39,15 @@ app.include_router(api_router, prefix=settings.api_prefix)
 
 
 @app.get("/health", tags=["health"])
-def health():
-    return {"status": "ok", "storage": settings.storage_backend, "model": settings.openai_model}
+async def health():
+    from sqlalchemy import text
+
+    from app.db.database import IS_SQLITE, SessionLocal
+
+    async with SessionLocal() as db:
+        await db.execute(text("SELECT 1"))
+    return {"status": "ok", "database": "sqlite" if IS_SQLITE else "postgresql",
+            "storage": settings.storage_backend, "model": settings.openai_model}
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-"""Structured evaluation result (same shape as the client's golden evaluation workbook).
+"""Structured evaluation result (generic: any product, any standard body).
 
 The AI fills `EvaluationAI` (strict JSON schema). The clause-by-clause table is built
 deterministically from the TRF and enriched with the AI's clause notes.
@@ -15,92 +15,68 @@ FinalVerdict = Literal[
     "REPORT CORRECTION / REPLACEMENT REQUIRED — PRODUCT COMPLIANCE NOT DETERMINED — CERTIFICATION HOLD",
     "REPORT REJECTED — NON-CONFORMITY ESTABLISHED",
 ]
-Priority = Literal["P0", "P1", "P2"]
-RiskLevel = Literal["Critical", "High", "Medium", "Low"]
-RequiredVerdict = Literal[
-    "PASS", "PASS WITH EVIDENCE", "PASS WITH VERIFIED DETAILS", "PASS WITH TRACEABILITY",
-    "PASS SUBJECT TO EVIDENCE", "PASS FOR RECORDED SETUP ONLY", "PASS OR JUSTIFIED N/A",
-    "JUSTIFIED N/A IF APPLICABLE", "CONDITIONAL PASS", "CONDITIONAL PASS / HOLD",
-    "INSUFFICIENT DETAIL", "REVIEW", "CORRECT", "HOLD / CORRECT", "FAIL / NON-CONFORMITY",
-    "CERTIFICATION HOLD",
-]
-FinalStatus = Literal[
-    "ACCEPTED", "PASS WITH EVIDENCE", "PASS OR JUSTIFIED N/A", "CONDITIONAL PASS ONLY",
-    "COVERAGE NOT VERIFIED", "REPORT HOLD", "NON-CONFORMITY", "CERTIFICATION HOLD",
-]
+Severity = Literal["Critical", "High", "Medium", "Low", "Not stated"]
+GapType = Literal["PRODUCT_IDENTITY_CONFLICT", "NUMERIC_MISMATCH", "LIMIT_EXCEEDED", "INCORRECT_TEST_CONDITION",
+                  "MISSING_EVIDENCE", "CLAUSE_NOT_ADDRESSED", "UNJUSTIFIED_NOT_APPLICABLE",
+                  "STANDARD_VERSION_MISMATCH", "DOCUMENT_INTEGRITY", "OTHER", "NOT_STATED"]
 
 
 class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class DecisionPoint(_Strict):
-    priority: Priority
-    title: str = Field(description="Short title, e.g. 'Sample identity and traceability'")
-    finding: str = Field(description="What the report states, with pages and values")
-    required_resolution: str
+class Finding(_Strict):
+    clause: str = Field(description="Clause number(s), e.g. '7.1' or '10.1; 10.2'; '—' if general")
+    gap_type: GapType
+    finding: str = Field(description="Finding reason: what the report shows (values, units) and why it does not "
+                                     "meet the requirement")
+    reason: str = Field(description="Normative requirement: what the supplied standard requires, one sentence")
+    required_action: str = Field(description="One imperative sentence")
+    pages: str = Field(description="Report PDF pages, e.g. 'PDF pp.14,79'")
+    severity: Severity = Field(description="Critical: blocks any compliance decision or a measured failure; "
+                                           "High: evidence missing or wrong for an applicable safety clause; "
+                                           "Medium: incomplete or inconsistent record; Low: editorial")
+    report_quote: str = Field(description="Verbatim words (max 25) copied from the REPORT that show the finding; "
+                                          "'none' if the finding is an absence")
+    standard_quote: str = Field(description="Verbatim words (max 25) copied from the supplied STANDARD stating the "
+                                            "requirement, or 'not in supplied standards'")
+    code_verified: bool = Field(description="Always false; set by code for its own deterministic checks")
+    report_check: str = Field(description="Always 'not checked'; filled by code")
+    standard_check: str = Field(description="Always 'not checked'; filled by code")
 
 
-class ProductFact(_Strict):
-    fact: str = Field(description="e.g. 'Loading type', 'Door interlock', 'Rated power'")
-    value: str = Field(description="Value as stated in the report, or 'not stated in report'")
-    source: str = Field(description="e.g. 'PDF p.4' or 'photo PDF p.83'")
-
-
-class CriticalFinding(_Strict):
-    root_cause: str = Field(description="Root-cause group: P0-01 traceability, P0-02 Part 2 evidence, "
-                                        "P0-03 Clause 10 integrity, P0-04 heating, P0-05 abnormal operation, "
-                                        "or P1 / P2 for other findings")
-    clause_or_concern: str = Field(description="e.g. '10.1 Power input' or 'Identity: declared versus tested'")
-    report_condition: str = Field(description="What the report records, with numbers and units")
-    engineer_comments: str
-    required_verdict: RequiredVerdict
-    required_action: str
-    report_reference: str = Field(description="e.g. 'PDF pp.14–15,79'")
-
-
-class CoverageRow(_Strict):
-    clauses: str = Field(description="Part 2 clause(s), e.g. '15.1.1 / 15.1.2'")
-    safety_area: str
-    report_status: str
-    applicability_rule: str
-    required_outcome: str
-    risk_level: RiskLevel
-
-
-class Part1Correction(_Strict):
-    clause_or_issue: str
-    finding: str
-    engineer_comments: str
-    required_correction: str
-    final_status: FinalStatus
-
-
-class ClauseNote(_Strict):
-    clause: str = Field(description="Clause number exactly as in the report, e.g. '7.1'")
-    critical: bool = Field(description="True if this clause needs specific review")
-    note: str = Field(description="Short discrepancy / verification note with values, e.g. '96V vs cover 220–240V'")
+class ClauseNote(BaseModel):
+    clause: str
+    critical: bool
+    note: str
 
 
 class EvaluationAI(_Strict):
-    title_product: str = Field(description="e.g. 'INGCO SUBMERSIBLE PUMP'")
+    title_product: str = Field(description="Product type and brand, e.g. 'INGCO SUBMERSIBLE PUMP'")
     report_number: str
     laboratory: str
     report_date: str
     product_declared: str = Field(description="Brand, model, ratings, class, IP as declared on cover/nameplate")
-    standards_claimed: str = Field(description="Standards and editions the report claims, with pages if they differ")
-    evaluation_basis: str = Field(description="Which supplied standards were used and what could not be verified")
-    final_verdict: FinalVerdict
-    reason: str
-    tested_model_matches_declared: bool = Field(description="False if the tested sample/model/rating differs from the declared product")
     declared_model: str
-    product_facts: list[ProductFact] = Field(description="Authoritative product facts used for applicability")
-    decision_points: list[DecisionPoint]
-    final_technical_conclusion: str
-    critical_findings: list[CriticalFinding]
-    part2_coverage: list[CoverageRow]
-    part1_corrections: list[Part1Correction]
-    clause_notes: list[ClauseNote]
+    standards_claimed: str = Field(description="Standards and editions the report claims, with pages if they differ")
+    standards_evaluated: str = Field(description="Supplied standards used, and what could not be verified")
+    final_verdict: FinalVerdict
+    reason: str = Field(description="One or two sentences behind the verdict")
+    recommended_action: str = Field(description="One sentence: what must happen before certification can proceed")
+    conclusion: str = Field(description="One paragraph")
+    tested_model_matches_declared: bool = Field(description="False if the tested sample/model/rating differs from the declared product")
+    findings: list[Finding]
+
+
+class Gap(BaseModel):
+    """Clause of a supplied standard (read by code) that the report does not cover or reports N/A."""
+    part: str                      # "Part 1" | "Part 2"
+    clause: str
+    status: str = ""               # "Not in report" | "Reported N/A"
+    requirement: str               # first words of the clause in the standard
+    reason: str                    # why it is a gap
+    required_action: str
+    pages: str
 
 
 class ClauseReviewRow(BaseModel):
@@ -123,7 +99,8 @@ class EvaluationDocument(BaseModel):
     standards: list[str]                 # ["IEC 60335-1:2010 (Part 1)", ...]
     part2_label: str                     # "Part 2-41"
     ai: EvaluationAI
-    clause_review: list[ClauseReviewRow]
+    gaps: list[Gap] = []                 # not filled any more: gaps are AI findings (kept for old results)
+    clause_review: list[ClauseReviewRow] = []   # not filled any more (kept for old results)
     model: str | None = None
 
 
@@ -141,4 +118,5 @@ class EvaluationOut(BaseModel):
     xlsx_path: str | None
     download_pdf: str
     download_xlsx: str
+    download_json: str = ""
     warnings: list[str] = []

@@ -1,9 +1,9 @@
-"""Formal evaluation pipeline (golden-workbook output, rendered to Excel + branded PDF).
+"""Evaluation pipeline (generic: any product, any standard body), rendered to Excel + PDF + JSON.
 
-1. resolve report + standards (Part 2 brings its Part 1)      deterministic
-2. extract the TRF clause register from the report PDF       deterministic
-3. one structured OpenAI call -> EvaluationAI                 AI (inside)
-4. merge clause notes into the clause register                deterministic
+1. resolve report + standards (Part 2 brings its Part 1)          deterministic
+2. clause table of the report + clause registers of Part 1/Part 2 deterministic (code reads the PDFs)
+3. one structured OpenAI call -> EvaluationAI                      AI
+4. code checks override the AI; gaps = standard clauses vs report  deterministic
 5. render .xlsx + .pdf -> reports/{id}/outputs/evaluation_{eval_id}/
 """
 import asyncio
@@ -18,14 +18,14 @@ from app.config.settings import get_settings
 from app.models import ChatSession, Evaluation, Report, ReportFile, Standard
 from app.models.base import new_id
 from app.schema.evaluation import EvaluationAI, EvaluationDocument
-from app.service.ai_service import AIService
-from app.service.clause_review import build_clause_review
+from app.service.ai_service import AIFilesMissingError, AIService
 from app.service.render.excel_renderer import render_xlsx
 from app.service.render.pdf_renderer import render_pdf
 from app.service.report_service import ReportService
 from app.service.standard_service import StandardService
 from app.service.storage_service import StorageBackend
 from app.service.objective_checks import analyse_report_pdf, apply_objective_checks, checks_as_prompt
+from app.service.standard_clauses import registers_as_prompt, standard_registers
 from app.service.trf_parser import ClauseRow, parse_clause_rows
 from app.utils.exceptions import BadRequestError, ForbiddenError, NotFoundError
 from app.utils.pdf_utils import UploadedPdf, format_ref, parse_ref, safe_filename
@@ -108,7 +108,11 @@ class EvaluationService:
         # 4) deterministic clause register
         texts, facts, checks = await analyse_report_pdf(await self.storage.get(rf.storage_key), rf.sha256)
         clause_rows, pages = parse_clause_rows(texts), len(texts)
+        registers = await standard_registers(self.storage, selected)
         checks_text = checks_as_prompt(facts, checks)
+        register_text = registers_as_prompt(registers, clause_rows)
+        if register_text:
+            checks_text += "\n\n" + register_text
         if not clause_rows:
             warnings.append("No TRF clause table found in the report; clause register is empty.")
 
@@ -131,13 +135,23 @@ class EvaluationService:
         logger.info("Evaluation start report=%s standards=%s clauses=%d mode=%s",
                     rf.storage_key, [format_ref(s.name, s.edition) for s in selected], len(clause_rows),
                     "from-analysis" if analysis else "full")
-        ai_result, meta = await self.ai.evaluate(prompt, file_ids)
+        try:
+            ai_result, meta = await self.ai.evaluate(prompt, file_ids)
+        except AIFilesMissingError as exc:   # ids from another OpenAI key/project -> upload again, retry once
+            logger.warning("OpenAI files missing %s -> re-uploading and retrying once", exc.file_ids)
+            for item in [*selected, rf]:
+                item.openai_file_id = None
+            await self.db.commit()
+            file_ids = [await self.standards.ensure_openai_file(s, self.ai) for s in selected]
+            file_ids.append(await self.reports.ensure_openai_file(rf, self.ai))
+            ai_result, meta = await self.ai.evaluate(prompt, file_ids)
         ai_result = apply_objective_checks(ai_result, facts, checks)   # code wins over AI text
+        ai_result = await self._verify(ai_result, await self.storage.get(rf.storage_key), selected)
 
         # 6) build + render + store
         eval_id = new_id()
-        doc = self._document(eval_id, rf, pages, selected, ai_result, clause_rows, meta.model)
-        pdf_key, xlsx_key = await self._render_and_store(doc, rf)
+        doc = self._document(eval_id, rf, pages, selected, ai_result, meta.model)
+        pdf_key, xlsx_key = await self._render_and_store(doc, rf, selected)
         row = Evaluation(
             id=eval_id, user_id=user_id, chat_id=chat.id if chat else None, report_file_id=rf.id,
             standard_ids=[s.id for s in selected], standard_names=[format_ref(s.name, s.edition) for s in selected],
@@ -184,11 +198,12 @@ class EvaluationService:
         meta = report_meta_from_text("\n".join(texts[:3]))
         meta.setdefault("standards_claimed", ", ".join(rf.detected_standards or []) or "not stated in review")
         ai = apply_objective_checks(parse_chat_markdown(md, meta), facts, checks)
-        clause_rows, pages = parse_clause_rows(texts), len(texts)
+        ai = await self._verify(ai, data, selected)
+        pages = len(texts)
 
         eval_id = new_id()
-        doc = self._document(eval_id, rf, pages, selected, ai, clause_rows, "no-llm (markdown)")
-        pdf_key, xlsx_key = await self._render_and_store(doc, rf)
+        doc = self._document(eval_id, rf, pages, selected, ai, "no-llm (markdown)")
+        pdf_key, xlsx_key = await self._render_and_store(doc, rf, selected)
         row = Evaluation(
             id=eval_id, user_id=user_id, report_file_id=rf.id,
             chat_id=analysis.chat_id if analysis else None,
@@ -199,9 +214,8 @@ class EvaluationService:
         )
         self.db.add(row)
         await self.db.commit()
-        logger.info("Evaluation (no LLM) %s from %s: %d findings, %d clause rows", eval_id,
-                    "analysis " + analysis_id if analysis_id else "uploaded markdown",
-                    len(ai.critical_findings), len(clause_rows))
+        logger.info("Evaluation (no LLM) %s from %s: %d findings", eval_id,
+                    "analysis " + analysis_id if analysis_id else "uploaded markdown", len(ai.findings))
         return row, False, ["Built from the chat answer without an AI call; findings are exactly those in the answer."]
 
     @staticmethod
@@ -221,11 +235,35 @@ class EvaluationService:
     async def rerender(self, evaluation_id: str, user_id: str) -> Evaluation:
         """Re-create PDF/XLSX from the stored result (no AI call) - use after changing the format."""
         ev = await self.get(evaluation_id, user_id)
-        doc = EvaluationDocument.model_validate(ev.result)
+        doc = self.document_of(ev)
         rf = await self.db.get(ReportFile, ev.report_file_id)
-        ev.pdf_path, ev.xlsx_path = await self._render_and_store(doc, rf)
+        selected = await self.standards.get_many(ev.standard_ids or [], ignore_missing=True)
+        ev.pdf_path, ev.xlsx_path = await self._render_and_store(doc, rf, selected)
         await self.db.commit()
         return ev
+
+    async def _verify(self, ai: EvaluationAI, report_pdf: bytes, selected: list[Standard]) -> EvaluationAI:
+        """Search every AI quote in the report / standard PDFs (code, no AI)."""
+        from app.service.evidence_check import verify_findings
+
+        stds = []
+        for s in selected:
+            try:
+                stds.append((format_ref(s.name, s.edition), await self.storage.get(s.storage_key)))
+            except Exception:                       # missing standard file: its quotes show as not found
+                logger.warning("Standard file missing for evidence check: %s", s.storage_key)
+        return await asyncio.to_thread(verify_findings, ai, report_pdf, stds)
+
+    @staticmethod
+    def document_of(ev: Evaluation) -> EvaluationDocument:
+        """Stored result -> document. Results saved before the generic format cannot be re-rendered."""
+        from pydantic import ValidationError
+
+        try:
+            return EvaluationDocument.model_validate(ev.result)
+        except ValidationError as exc:
+            raise BadRequestError("This evaluation was saved in the old format. Build it again with "
+                                  "POST /evaluations/from-analysis (no AI call).") from exc
 
     async def get(self, evaluation_id: str, user_id: str | None = None) -> Evaluation:
         ev = await self.db.get(Evaluation, evaluation_id)
@@ -248,7 +286,8 @@ class EvaluationService:
             raise ForbiddenError("This chat belongs to another user")
         return chat
 
-    def _document(self, eval_id, rf, pages, selected, ai: EvaluationAI, clause_rows, model) -> EvaluationDocument:
+    def _document(self, eval_id, rf, pages, selected, ai: EvaluationAI, model) -> EvaluationDocument:
+        """Exactly the AI output (+ code-verified marks): no extra sections are added."""
         part2 = next((s for s in selected if s.part_type == "part2"), None)
         return EvaluationDocument(
             evaluation_id=eval_id, created_at=datetime.now(timezone.utc),
@@ -257,20 +296,28 @@ class EvaluationService:
                        f"{' ' + s.part_number if s.part_type in ('part2', 'part') else ''})" for s in selected],
             part2_label=f"Part {part2.part_number}" if part2 else "Standard",
             ai=ai,
-            clause_review=build_clause_review(clause_rows, ai.clause_notes, ai.declared_model,
-                                              ai.tested_model_matches_declared),
             model=model,
         )
 
-    async def _render_and_store(self, doc: EvaluationDocument, rf: ReportFile) -> tuple[str, str]:
-        base = f"{self.settings.reports_prefix}{rf.id}/outputs/evaluation_{doc.evaluation_id}/"
+    async def _render_and_store(self, doc: EvaluationDocument, rf: ReportFile,
+                                selected: list[Standard] | None = None) -> tuple[str, str]:
+        """PDF + XLSX + JSON next to the report: reports/<report name>/outputs/evaluation_{id}/
+        (standards/ holds only standard PDFs)."""
+        import json
+
+        from app.service.evaluation_json import evaluation_json
+        from app.service.report_service import report_dir
+
+        base = f"{report_dir(rf)}outputs/evaluation_{doc.evaluation_id}/"
         name = "Technical_Evaluation_" + safe_filename(doc.ai.report_number or rf.original_filename)
-        pdf_key, xlsx_key = f"{base}{name}.pdf", f"{base}{name}.xlsx"
+        pdf_key, xlsx_key, json_key = f"{base}{name}.pdf", f"{base}{name}.xlsx", f"{base}{name}.json"
         pdf_bytes, xlsx_bytes = await asyncio.gather(asyncio.to_thread(render_pdf, doc),
                                                      asyncio.to_thread(render_xlsx, doc))
         await self.storage.put(pdf_key, pdf_bytes, content_type="application/pdf")
         await self.storage.put(xlsx_key, xlsx_bytes,
                          content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        await self.storage.put(json_key, json.dumps(evaluation_json(doc), indent=2, ensure_ascii=False).encode(),
+                               content_type="application/json")
         return pdf_key, xlsx_key
 
 
@@ -279,8 +326,8 @@ def _build_prompt(labels: list[str], selected: list[Standard], rows: list[Clause
     lines = ["Files attached (same order):" if not prior_review else "Documents (not attached):"]
     lines += [f"- {l}" for l in labels]
     if any(s.part_type == "part2" for s in selected):
-        lines.append("Rule: Part 2 clauses replace, modify or add to the Part 1 clause with the same number; "
-                     "where Part 2 is silent, Part 1 applies.")
+        lines.append("Rule: particular-part clauses replace, modify or add to the general-part clause with the same "
+                     "number; where the particular part is silent, the general part applies.")
     lines += ["", "Clause register extracted from the report (clause | report verdict | PDF pages | topic):"]
     for r in rows:
         lines.append(f"{r.clause} | {r.verdict or '-'} | {','.join(map(str, r.pages))} | "

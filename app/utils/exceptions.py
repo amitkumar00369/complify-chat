@@ -86,3 +86,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def _unhandled(_: Request, exc: Exception):
         logger.exception("Unhandled error")
         return _err(500, "internal_error", "Something went wrong")
+class StandardNotUploadedError(AppError):
+    """A report was sent but the standard(s) it is tested against are not uploaded."""
+    status_code = 422
+    code = "standard_not_uploaded"

@@ -47,17 +47,57 @@ def sha256_hex(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def open_pdf(data: bytes) -> PdfReader:
+    """PdfReader that also opens encrypted PDFs with no user password (IEC/DIN shop downloads are
+    RC4/AES 'protected' but open without a password). Older pypdf versions, or pypdf with a newer
+    'cryptography' package, do not always unlock them on their own -> unlock explicitly."""
+    reader = PdfReader(io.BytesIO(data))
+    if reader.is_encrypted:
+        try:
+            reader.decrypt("")
+        except Exception as exc:                      # no crypto provider for this cipher, etc.
+            logger.warning("Could not unlock encrypted PDF with pypdf: %s", exc)
+    return reader
+
+
+def _pdfminer_pages(data: bytes, max_pages: int | None = None) -> list[str]:
+    """Fallback text per page with pdfminer (decrypts RC4/AES itself, no pypdf crypto needed)."""
+    from pdfminer.high_level import extract_pages
+    from pdfminer.layout import LTTextContainer
+
+    out = []
+    for i, layout in enumerate(extract_pages(io.BytesIO(data), password="")):
+        if max_pages is not None and i >= max_pages:
+            break
+        out.append("".join(el.get_text() for el in layout if isinstance(el, LTTextContainer)))
+    return out
+
+
+def pdf_page_texts(data: bytes, max_pages: int | None = None) -> list[str]:
+    """Text of every page (or the first `max_pages`). pypdf first, pdfminer if pypdf cannot
+    open the file (encrypted PDF it cannot unlock). Never raises: [] for unreadable files."""
+    try:
+        reader = open_pdf(data)
+        pages = reader.pages if max_pages is None else reader.pages[:max_pages]
+        out = []
+        for page in pages:
+            try:
+                out.append(page.extract_text() or "")
+            except Exception:                         # one bad page must not stop the rest
+                out.append("")
+        return out
+    except Exception as exc:                          # pypdf raises many types on malformed files
+        logger.warning("pypdf could not read PDF (%s), trying pdfminer", exc)
+    try:
+        return _pdfminer_pages(data, max_pages)
+    except Exception as exc:
+        logger.warning("PDF text extraction failed: %s", exc)
+        return []
+
+
 def extract_text(data: bytes, max_pages: int = 5) -> str:
     """Best-effort text of the first `max_pages` pages ('' for scanned/broken PDFs)."""
-    try:
-        reader = PdfReader(io.BytesIO(data))
-        parts = []
-        for page in reader.pages[:max_pages]:
-            parts.append(page.extract_text() or "")
-        return "\n".join(parts)
-    except Exception as exc:  # pypdf raises many types on malformed files
-        logger.warning("PDF text extraction failed: %s", exc)
-        return ""
+    return "\n".join(pdf_page_texts(data, max_pages))
 
 
 # Upper-case prefixes only, so normal words like "is 10" don't match.

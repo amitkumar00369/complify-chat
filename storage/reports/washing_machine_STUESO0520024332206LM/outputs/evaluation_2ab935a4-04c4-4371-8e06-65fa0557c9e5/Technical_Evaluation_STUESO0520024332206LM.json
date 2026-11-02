@@ -1,0 +1,352 @@
+{
+  "report_id": "STUESO0520024332206LM",
+  "gaps": [
+    {
+      "clause_id": "10.1",
+      "gap_type": "PRODUCT_IDENTITY_CONFLICT",
+      "priority": "CRITICAL",
+      "normative_requirement": "Power input is assessed against the appliance’s rated power input.",
+      "finding_reason": "The declared rating is 240 V, 400 W, but the power-input table uses a 2,500 W rated basis and records 2,580 W. The photograph also shows a label reading 380 V, three-phase, so attribution of the results to EC/27FW is not established.",
+      "evidence_reference": "Report pages 2, 77 and 83",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Establish the identity and rating of the tested sample and replace the report with traceable results for the declared model."
+    },
+    {
+      "clause_id": "10.1",
+      "gap_type": "NUMERIC_MISMATCH",
+      "priority": "CRITICAL",
+      "normative_requirement": "The measured power-input deviation is compared with the permitted deviation from rated input.",
+      "finding_reason": "For 2,500 W rated and 2,580 W measured, the deviation is +3.2%, not the reported +6.7%, +7.3% or +10.0%. The three rows repeat the same powers.",
+      "evidence_reference": "Report page 77",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Recalculate the deviations from verified measurements and record the applicable limit and representative operating period."
+    },
+    {
+      "clause_id": "11.8",
+      "gap_type": "LIMIT_EXCEEDED",
+      "priority": "CRITICAL",
+      "normative_requirement": "Temperature rises during the heating test shall not exceed the applicable limits.",
+      "finding_reason": "The report records an internal-wire rise of 61.9 K against its stated limit of 35 K: an objective failure. The general \"not out of tolerance\" statement and the N/A table verdict do not resolve it.",
+      "evidence_reference": "Report pages 13 and 77",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Investigate the failure, correct the product or demonstrate an expressly applicable different limit, and repeat the relevant assessment."
+    },
+    {
+      "clause_id": "—",
+      "gap_type": "DOCUMENT_INTEGRITY",
+      "priority": "CRITICAL",
+      "normative_requirement": "The supplied standards do not specify report-date consistency or identification of appended photographs.",
+      "finding_reason": "The cover dates the report 10 April 2026, before the stated test end of 17 April, while the issue page gives 17 April; the only photograph is not linked to the declared model.",
+      "evidence_reference": "Report pages 1–3 and 83",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "REPORT_EVIDENCE_CONFIRMED",
+      "required_action": "Obtain an authenticated replacement report with consistent dates and traceable sample photographs."
+    },
+    {
+      "clause_id": "10.1",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "A power-input measurement applies where the appliance is marked with rated power input.",
+      "finding_reason": "Clause 10.1 is marked N/A on page 11 despite the 400 W declaration and a populated table on page 77; the table uses a conflicting rated input.",
+      "evidence_reference": "Report pages 2, 11 and 77",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Assess the 400 W model at its rated voltage and resolve the inconsistent verdict."
+    },
+    {
+      "clause_id": "5.7",
+      "gap_type": "INCORRECT_TEST_CONDITION",
+      "priority": "HIGH",
+      "normative_requirement": "Unless otherwise specified, tests are performed in a draught-free location at 20 °C ± 5 °C.",
+      "finding_reason": "The heating table records an ambient temperature of 45 °C, outside the specified range; no applicable alternative condition is identified.",
+      "evidence_reference": "Report page 77",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "REQUIREMENT_CONFIRMED",
+      "required_action": "Repeat the heating assessment at the specified ambient temperature and document the conditions."
+    },
+    {
+      "clause_id": "3.1.9; 11.7",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "Washing-machine heating tests use the specified load and water conditions and the applicable operating-cycle sequence.",
+      "finding_reason": "The report does not record the textile load, initial water temperature, programme or cycle and rest-period sequence needed to establish the washing-machine test conditions.",
+      "evidence_reference": "Report pages 12, 13 and 77",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Document the construction and repeat or substantiate the heating test using the applicable washing-machine conditions and sequence."
+    },
+    {
+      "clause_id": "6.2; 7.1; 15.1.1; 15.1.2",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Washing machines shall be at least IPX4, and the IP number other than IPX0 shall be marked.",
+      "finding_reason": "The report passes ingress protection but gives no classification, marks IP identification N/A, and marks the IPX4 positioning provision N/A without an explanation.",
+      "evidence_reference": "Report pages 4, 16 and 17",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify and verify the IP classification and marking and document the applicable IPX4 test arrangement and results."
+    },
+    {
+      "clause_id": "7.12",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "The washing-machine instructions shall specify the maximum dry-cloth mass in kilograms.",
+      "finding_reason": "The report’s instructions section does not address the required maximum load; that value also determines the normal-operation test load.",
+      "evidence_reference": "Report pages 6 and 7",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide the instructions and record the maximum dry-cloth mass and its use in testing."
+    },
+    {
+      "clause_id": "7.12; 7.12.5",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "Safe-use instructions, the specified supervision statements and the type Y supply-cord replacement instruction are required.",
+      "finding_reason": "Type Y attachment is declared, but the report does not address its cord-replacement instruction or the general safety and child-supervision statements.",
+      "evidence_reference": "Report pages 3, 6 and 7",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Examine the supplied instructions and document conformity with the applicable safety and type Y wording."
+    },
+    {
+      "clause_id": "15.2",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Washing machines are tested for spillage, including the prescribed top-surface solution application and, as applicable, overflow treatment.",
+      "finding_reason": "A pass is recorded against the general spillage wording, but the report gives no washing-machine-specific procedure, solution quantities, overflow conditions or post-test observations.",
+      "evidence_reference": "Report page 18",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Perform or substantiate the particular-part spillage test and record its conditions and results."
+    },
+    {
+      "clause_id": "15.101; 5.3",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "The foaming test is performed immediately after 15.2 and before the humidity test, unless the applicable electrolyser provisions replace it.",
+      "finding_reason": "No foaming test or associated sequence is reported, and the appliance is not described sufficiently to establish an Annex CC alternative.",
+      "evidence_reference": "Report page 18",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify whether Annex CC applies and document the applicable foaming test, sequence and electric-strength result."
+    },
+    {
+      "clause_id": "15.3",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Humidity conditioning requires 48 h at specified humidity and a controlled temperature between 20 °C and 30 °C.",
+      "finding_reason": "The report records 94% relative humidity but no actual cabinet temperature, conditioning temperature or measured duration; the printed preconditioning expression is incomplete.",
+      "evidence_reference": "Report page 18",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide the humidity-conditioning record, including actual temperatures, duration and subsequent test results."
+    },
+    {
+      "clause_id": "18.101; 5.2; 5.3; 22.104",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "Lid or door interlocks must withstand the specified endurance and resistance-to-forcing tests in the required sequence on the same appliance.",
+      "finding_reason": "An interlock switch appears in the heating table, but the report does not address interlock endurance, forcing, test sequence or sample continuity.",
+      "evidence_reference": "Report pages 21, 33 and 77",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify the interlock and document the applicable endurance and forcing tests on the required sample and in the required sequence."
+    },
+    {
+      "clause_id": "19.1; 19.7",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Motors are subject to applicable abnormal-operation tests, except motors driving moving parts of an oscillating agitator.",
+      "finding_reason": "The report treats the appliance as motor-operated but marks the stalled-condition test N/A and leaves its results table empty without identifying the motor or establishing the exception.",
+      "evidence_reference": "Report pages 13, 21, 23 and 78",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify each motor and perform or justify exclusion from the applicable stalled-condition tests."
+    },
+    {
+      "clause_id": "19.10",
+      "gap_type": "INCORRECT_TEST_CONDITION",
+      "priority": "HIGH",
+      "normative_requirement": "An applicable series-motor test is performed at 1.3 times rated voltage for 1 min.",
+      "finding_reason": "The report records 254.4 V and P; for the declared 240 V rating, 1.3 times rated voltage is 312 V.",
+      "evidence_reference": "Report page 24",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Repeat the applicable series-motor test at 312 V for 1 min and record the outcome."
+    },
+    {
+      "clause_id": "19.11; 19.11.2",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Electronic circuits are evaluated for specified fault conditions unless the stated exemption conditions are met.",
+      "finding_reason": "The report passes the electronic-circuit provision but marks the circuit fault evaluation N/A without a circuit description or an assessment supporting exemption.",
+      "evidence_reference": "Report pages 21, 24 and 25",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify the electronic circuits and document the fault evaluation or a substantiated exemption."
+    },
+    {
+      "clause_id": "19.101; 19.13",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "For washing machines with a programmer or timer, specified fault conditions are applied and the textile material shall not ignite, char or glow.",
+      "finding_reason": "The report omits the particular-part fault conditions and textile acceptance criteria; the presence of a programmer or timer is not established.",
+      "evidence_reference": "Report pages 21–29",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify the controls and document the applicable washing-machine abnormal tests and textile observations."
+    },
+    {
+      "clause_id": "20.1",
+      "gap_type": "INCORRECT_TEST_CONDITION",
+      "priority": "HIGH",
+      "normative_requirement": "For the washing-machine stability test, doors and lids are closed and the appliance is empty or filled, whichever is more unfavourable.",
+      "finding_reason": "The report passes a general-part statement requiring doors open or closed, whichever is more unfavourable, without recording the particular-part configuration.",
+      "evidence_reference": "Report page 30",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Document or repeat the stability test with doors and lids closed and the specified loading condition."
+    },
+    {
+      "clause_id": "20.101; 20.102; 20.103; 20.104; 20.105",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "Applicable washing-machine requirements address unbalanced loads, interlocking and drum stopping or locking.",
+      "finding_reason": "The report contains no particular-part mechanical-hazard assessment; drum type, loading direction, speed and energy are not identified to determine the relevant interlock and stopping tests.",
+      "evidence_reference": "Report pages 29–31",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Establish the machine construction and document the applicable unbalanced-load, interlock and stopping tests."
+    },
+    {
+      "clause_id": "21.101; 21.102",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "Washing-machine lids and doors require adequate mechanical strength, and lids require resistance to distortion.",
+      "finding_reason": "The report records general mechanical-strength tests but omits the particular lid and door tests; an interlock switch is recorded without identification of its associated closure.",
+      "evidence_reference": "Report pages 31–33 and 77",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify the lid or door and perform and document the applicable strength and distortion tests."
+    },
+    {
+      "clause_id": "22.6",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Electrical insulation must be protected from condensation and leakage, subject to the particular-part ageing-test exception.",
+      "finding_reason": "The report marks the construction requirement and leakage test N/A without identifying the water-containing construction or documenting an Annex BB ageing exemption.",
+      "evidence_reference": "Report page 35",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Assess condensation and leakage paths and document the applicable inspection, test or ageing-test exemption."
+    },
+    {
+      "clause_id": "22.101; 22.103; 22.105",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "Applicable washing-machine construction provisions control opening of doors, hot-water filter compartments and mechanical emergency releases.",
+      "finding_reason": "These particular-part provisions are absent, and the report does not identify whether the relevant door, filter compartment or release mechanism exists.",
+      "evidence_reference": "Report pages 33–45",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Describe these features and assess each applicable construction requirement."
+    },
+    {
+      "clause_id": "24.1.3; 24.1.4",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "Required switches and applicable programmers and interlocks must meet the specified component endurance requirements.",
+      "finding_reason": "A switch is listed as tested with the appliance and an interlock switch is recorded, but switch-cycle and washing-machine interlock or programmer endurance evidence is absent.",
+      "evidence_reference": "Report pages 48–51 and 77–79",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify the components and provide applicable component approvals or endurance-test results."
+    },
+    {
+      "clause_id": "25.13",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Supply-cord inlet openings must permit introduction without damage and have the specified lining or bushing where applicable.",
+      "finding_reason": "The appliance has a type Y supply cord, yet the inlet-opening requirement is marked N/A without a construction-based explanation.",
+      "evidence_reference": "Report pages 3, 55 and 78",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Inspect and document the cord inlet and any required lining or bushing."
+    },
+    {
+      "clause_id": "27.3",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "For appliances with supply cords, current-carrying conductors must become taut before the earthing conductor if the cord slips.",
+      "finding_reason": "The report declares a class I appliance with a type Y supply cord but marks this check N/A without justification.",
+      "evidence_reference": "Report pages 3, 54 and 64",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Inspect the conductor arrangement and document the protective-earthing slack check."
+    },
+    {
+      "clause_id": "28.2",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Electrical and earthing connections must maintain contact pressure despite applicable insulating-material shrinkage or distortion.",
+      "finding_reason": "The report marks the requirement N/A even though it records electrical and earthing connections; no construction-based exemption is documented.",
+      "evidence_reference": "Report pages 63, 64 and 66",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Inspect the electrical and earthing connections and document conformity or the applicable exemption."
+    },
+    {
+      "clause_id": "29.2; 29.2.1; 29.2.3; 29.2.4",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Creepage distances depend on working voltage, material group and pollution degree, with the particular washing-machine provisions applied.",
+      "finding_reason": "The report reproduces the general pollution-degree rule and gives pass verdicts but no identifiable measured creepage paths or CTI evidence; functional creepage is marked N/A in the appended table.",
+      "evidence_reference": "Report pages 70, 71 and 79–82",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify each insulation path, its measured distance, working voltage, CTI and applicable pollution degree or justified exception."
+    },
+    {
+      "clause_id": "30.1",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Relevant non-metallic parts are checked for heat resistance by the specified ball-pressure test.",
+      "finding_reason": "Clause 30.1 is marked P, but the appended ball-pressure table is N/A and contains no parts, test temperatures or impressions.",
+      "evidence_reference": "Report pages 72 and 82",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide the ball-pressure results for the relevant parts or document a valid exclusion for each."
+    },
+    {
+      "clause_id": "30.2.3.1; 30.2.3.2",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Where 30.2.3 applies, relevant non-metallic parts supporting or near connections are assessed at the specified glow-wire severities or by permitted alternatives.",
+      "finding_reason": "The report passes the 850 °C and 750/650 °C provisions, but its only recorded glow-wire result is for the switch enclosure at 550 °C; connection current, exemption and material evidence are not supplied.",
+      "evidence_reference": "Report pages 74, 75 and 82",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Document each relevant part and connection current and provide the required test results or qualifying material evidence."
+    },
+    {
+      "clause_id": "7.13; 7.14; 7.15",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "MEDIUM",
+      "normative_requirement": "Required instructions must use an official language of the country of sale, and required markings must be legible, durable and on a main part.",
+      "finding_reason": "Language and main-part marking are marked N/A; the marking entry concerns a hot-surface symbol rather than the required durability check.",
+      "evidence_reference": "Report page 9",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify the destination and document the language, location, legibility and durability checks for required markings and instructions."
+    }
+  ],
+  "final_summary": {
+    "final_disposition": "REJECT_INSUFFICIENT_TECHNICAL_EVIDENCE",
+    "evaluation_conclusion": "The report does not establish compliance of model EC/27FW with the supplied general and washing-machine particular standards. In addition to the recorded heating failure, substantial washing-machine-specific evidence is absent or unsupported, including moisture, mechanical-hazard, interlock and abnormal-operation assessments.",
+    "total_gaps": 31,
+    "recommended_action": "Resolve the sample identity and recorded failure, complete the applicable tests and issue an authenticated replacement report before certification proceeds."
+  }
+}

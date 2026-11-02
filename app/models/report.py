@@ -48,7 +48,9 @@ class Report(Base):
     standard_names: Mapped[list] = mapped_column(JSON, default=list)
     standards_key: Mapped[str] = mapped_column(String(500), index=True)
     prompt: Mapped[str] = mapped_column(Text)
-    prompt_normalized: Mapped[str] = mapped_column(Text, index=True)
+    # no index: long prompts exceed PostgreSQL's 8 KB index-row limit; lookups are already
+    # narrowed by report_file_id + standards_key
+    prompt_normalized: Mapped[str] = mapped_column(Text)
     output: Mapped[str] = mapped_column(Text)
     output_path: Mapped[str | None] = mapped_column(String(1000))  # reports/{rf_id}/outputs/{id}.md
     model: Mapped[str | None] = mapped_column(String(100))

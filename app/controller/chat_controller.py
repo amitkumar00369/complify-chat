@@ -85,14 +85,25 @@ class ChatController:
         evaluation = ChatEvaluationOut(
             evaluation_id=ev.id, final_verdict=ev.final_verdict, pdf_path=ev.pdf_path, xlsx_path=ev.xlsx_path,
             download_pdf=f"{dl}/pdf?user_id={out.chat.user_id}",
-            download_xlsx=f"{dl}/xlsx?user_id={out.chat.user_id}") if ev else None
+            download_xlsx=f"{dl}/xlsx?user_id={out.chat.user_id}",
+            download_json=f"{self.settings.api_prefix}/evaluations/{ev.id}/json?user_id={out.chat.user_id}") if ev else None
+        result = None
+        if ev:      # evaluation -> structured JSON instead of the AI's markdown text
+            from app.service.evaluation_json import evaluation_json
+            from app.service.evaluation_service import EvaluationService
+
+            try:
+                result = evaluation_json(EvaluationService.document_of(ev))
+            except Exception as exc:   # evaluation saved in an old format -> fall back to the text answer
+                warnings.append(f"JSON not available for this evaluation ({exc}); text answer returned.")
         return ChatResponse(
             chat_id=out.chat.id,
             user_id=out.chat.user_id,
-            new_chat=out.new_chat,
-            user_message_id=out.user_message_id,
-            assistant_message_id=out.assistant_message_id,
-            answer=out.answer,
+            new_thread=out.new_chat,
+            user_evaluation_id=out.user_message_id,
+            report_analysis_id=out.assistant_message_id,
+            result=result,
+            # answer=None if result else out.answer,
             from_cache=out.from_cache,
             analysis_id=out.analysis.id if out.analysis else None,
             output_path=out.analysis.output_path if out.analysis else None,
@@ -102,7 +113,7 @@ class ChatController:
                                         parent_id=s.parent_id) for s in out.standards],
             standards_auto_detected=out.standards_auto_detected,
             warnings=warnings,
-            usage=Usage(model=r.model, input_tokens=r.input_tokens, output_tokens=r.output_tokens) if r else None,
+            # usage=Usage(model=r.model, input_tokens=r.input_tokens, output_tokens=r.output_tokens) if r else None,
             reused_existing_output=out.reused_existing_output,
             evaluation=evaluation,
         )

@@ -27,9 +27,23 @@ def async_url(url: str) -> str:
     return url
 
 
+def _masked(url: str) -> str:
+    """Show the URL without the password (safe for logs/errors)."""
+    import re
+
+    return re.sub(r"(//[^:/@]+:)[^@]*@", r"\1****@", url) if url else "(empty)"
+
+
 settings = get_settings()
 DATABASE_URL = async_url(settings.database_url)
-_url = make_url(DATABASE_URL)
+try:
+    _url = make_url(DATABASE_URL)
+except Exception as exc:
+    raise RuntimeError(
+        f"DATABASE_URL in .env is not a valid URL: {_masked(DATABASE_URL)!r}. Expected one line like "
+        "DATABASE_URL=postgresql+asyncpg://USER:PASSWORD@HOST:5432/DBNAME?ssl=require "
+        "(no quotes, no spaces, no comment on the same line; ${VAR} references are not supported)."
+    ) from exc
 IS_SQLITE = _url.get_backend_name() == "sqlite"
 
 if IS_SQLITE and _url.database and _url.database != ":memory:":
@@ -68,6 +82,10 @@ async def init_db() -> None:
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        if not IS_SQLITE:   # older PostgreSQL databases: drop the index that breaks on long prompts
+            from sqlalchemy import text
+
+            await conn.execute(text("DROP INDEX IF EXISTS ix_reports_prompt_normalized"))
 
 
 async def drop_db() -> None:

@@ -1,0 +1,242 @@
+{
+  "report_id": "EN201222034S",
+  "gaps": [
+    {
+      "clause_id": "5.2",
+      "gap_type": "PRODUCT_IDENTITY_CONFLICT",
+      "priority": "CRITICAL",
+      "normative_requirement": "Relevant type tests are carried out on an appliance representing the product assessed.",
+      "finding_reason": "The declared model is SPC55068, but the summary identifies 4TSC4.0-96-110/1000 as the model receiving full tests; equivalence is not established.",
+      "evidence_reference": "Report pages 1–3",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify the tested sample and provide a valid assessment of SPC55068."
+    },
+    {
+      "clause_id": "7.1",
+      "gap_type": "NUMERIC_MISMATCH",
+      "priority": "CRITICAL",
+      "normative_requirement": "The appliance is marked with its rated voltage or rated voltage range.",
+      "finding_reason": "The declared marking is 220–240 V, whereas the clause 7.1 entry records 96 V.",
+      "evidence_reference": "Report pages 2, 3 and 6",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Reconcile the sample identification and rated-voltage marking using verified evidence."
+    },
+    {
+      "clause_id": "10.1",
+      "gap_type": "NUMERIC_MISMATCH",
+      "priority": "CRITICAL",
+      "normative_requirement": "Power input is assessed against the marked rated power at rated voltage and normal operation.",
+      "finding_reason": "The declared rating is 550 W, but the test table uses 1,000 W as the rated basis and records 995.2 W at 72 V.",
+      "evidence_reference": "Report pages 2, 3 and 79",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Test and report the declared model against its verified 550 W rating."
+    },
+    {
+      "clause_id": "4",
+      "gap_type": "STANDARD_VERSION_MISMATCH",
+      "priority": "CRITICAL",
+      "normative_requirement": "The particular part supplements or modifies the applicable general part.",
+      "finding_reason": "The test specification claims IEC 60335-2-41:2025, while the compliance statement claims 2012; the claimed Part 1 amendments and the 2025 particular edition were not supplied. The supplied European particular standard also references A11:2021, which was not supplied.",
+      "evidence_reference": "Report pages 2 and 3",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Confirm the certification standard set and provide the claimed editions and amendments for assessment."
+    },
+    {
+      "clause_id": "5.8.1; 11.5; 13.1; 16.2",
+      "gap_type": "INCORRECT_TEST_CONDITION",
+      "priority": "HIGH",
+      "normative_requirement": "Applicable tests use the specified supply and voltage derived from the appliance rating.",
+      "finding_reason": "The declared rating is 220–240 V, 50 Hz, while the particulars state DC and the heating and leakage tables use 76.3 V; these conditions do not establish the required tests for the declared rating.",
+      "evidence_reference": "Report pages 2–4, 79 and 80",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Repeat the applicable tests using the verified supply and rated-voltage range of SPC55068."
+    },
+    {
+      "clause_id": "19.7",
+      "gap_type": "INCORRECT_TEST_CONDITION",
+      "priority": "HIGH",
+      "normative_requirement": "The stalled-motor test is performed at rated voltage for the applicable period.",
+      "finding_reason": "The recorded locked-rotor voltage is 116.6 Vdc, inconsistent with the declared 220–240 V, 50 Hz rating; the test duration is not recorded.",
+      "evidence_reference": "Report pages 2 and 81",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Repeat the stalled-motor test at the verified rated supply and record the duration and results."
+    },
+    {
+      "clause_id": "5.7; 11.7",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Pump tests use liquid temperature related to the marked maximum, and the heating test uses liquid at that marked temperature.",
+      "finding_reason": "The report states only that maximum liquid temperature is below 45 °C; the reproduced marking has no maximum temperature and no measured test-liquid temperature is recorded.",
+      "evidence_reference": "Report pages 3, 6, 14 and 79",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide the verified temperature marking and test-liquid records or repeat the heating assessment."
+    },
+    {
+      "clause_id": "7.1; 6.2",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "A submersible pump over 50 W is marked with maximum operating depth, and its IP number and maximum liquid temperature are marked.",
+      "finding_reason": "The 550 W pump is reported as IP68, but the reproduced marking does not show IP68, operating depth or maximum liquid temperature; operating depth is recorded as N/A.",
+      "evidence_reference": "Report pages 2–4, 6 and 7",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide the actual markings and verify the applicable marking requirements."
+    },
+    {
+      "clause_id": "7.12.1",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Installation instructions state maximum total head for pumps rated above 50 W.",
+      "finding_reason": "The report passes this item by reference to the marking detail, but the reproduced marking gives no maximum total head and the installation instructions are not supplied.",
+      "evidence_reference": "Report pages 3 and 10",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide the installation instructions and record the maximum total head."
+    },
+    {
+      "clause_id": "15.1.2",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Submersible pumps undergo the specified 24 h immersion at pressure determined by maximum operating depth.",
+      "finding_reason": "A pass is recorded, but maximum operating depth and actual test pressure are absent; the report also refers to 5 m rather than the supplied standard’s 15 m alternative.",
+      "evidence_reference": "Report pages 4 and 17",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide the marked depth and actual immersion conditions, and repeat the test if the required pressure was not applied."
+    },
+    {
+      "clause_id": "19.101; 19.13",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Pumps undergo the specified dry-running sequence and meet the applicable abnormal-operation criteria.",
+      "finding_reason": "The sequence is marked pass, but its test voltage, head, temperatures and post-test electric-strength results are not documented; the appended abnormal-temperature table identifies only 19.7.",
+      "evidence_reference": "Report pages 24, 25, 81 and 82",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide the complete 19.101 test record and associated 19.13 results."
+    },
+    {
+      "clause_id": "24.1.4",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Applicable thermal motor protectors are assessed with their motor under Annex D conditions.",
+      "finding_reason": "The test-item particulars indicate a self-resetting thermal cut-out, but the automatic-control and Annex D entries are N/A without identifying the device or establishing whether it is needed for compliance.",
+      "evidence_reference": "Report pages 4, 38, 62 and 82",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify the cut-out and document its compliance assessment, including Annex D testing where required."
+    },
+    {
+      "clause_id": "24.5; 19.7",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Auxiliary-winding capacitors are assessed for their ratings and applicable locked-rotor fault conditions.",
+      "finding_reason": "Clause 24.5 records passes for a motor capacitor, while the capacitor fault tests under 19.7 are N/A and no capacitor is identified in the component table.",
+      "evidence_reference": "Report pages 20, 40 and 82",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Establish whether an auxiliary-winding capacitor is fitted and provide its ratings and applicable fault-test results."
+    },
+    {
+      "clause_id": "25.1; 25.3",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "A class I submersible pump is provided with a flexible supply cord fitted with a plug.",
+      "finding_reason": "The pump is identified as class I and submersible, but the pump-specific cord and plug entries are N/A despite a general plug entry marked pass.",
+      "evidence_reference": "Report pages 4, 40 and 41",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Verify the supplied cord and plug and correct the pump-specific assessment."
+    },
+    {
+      "clause_id": "25.7; 25.8",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "An outdoor class I submersible pump has the specified cord type and minimum cord length.",
+      "finding_reason": "Outdoor use is selected in the particulars, but cord type, conductor area and outdoor cord length are not recorded and the relevant entries are N/A.",
+      "evidence_reference": "Report pages 4 and 41–43",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify and measure the supply cord and assess its type, conductor area and length against the applicable requirements."
+    },
+    {
+      "clause_id": "5.101; 25.14",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Pumps are tested as portable unless fixed, and applicable portable pumps undergo the cord-flexing test.",
+      "finding_reason": "Neither portable nor fixed classification is selected, and the portable-pump flexing test is N/A without a documented fixed-appliance basis.",
+      "evidence_reference": "Report pages 4, 6 and 43",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Establish the pump classification and perform the cord-flexing test if applicable."
+    },
+    {
+      "clause_id": "25.10; 27.3",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "A class I supply cord has a correctly connected green/yellow earthing core, and the earthing conductor remains slack longer than current-carrying conductors.",
+      "finding_reason": "The report identifies a class I appliance with a supply cord, but both checks are N/A without justification.",
+      "evidence_reference": "Report pages 4, 43 and 49",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Inspect and record the earthing-core connections and conductor arrangement."
+    },
+    {
+      "clause_id": "27.5",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Earthing continuity is tested at the specified current and the calculated resistance does not exceed 0.1 Ω.",
+      "finding_reason": "A pass is recorded, but no measured resistance, test current or accessible parts tested are provided.",
+      "evidence_reference": "Report pages 48 and 49",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Record the test current and measured resistance for each applicable earthed part."
+    },
+    {
+      "clause_id": "29.1; 29.2",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Clearance and creepage assessments use the applicable rated impulse voltage, working voltage, pollution degree and material group.",
+      "finding_reason": "The tables assess 500 V impulse and ≤50 V working voltage despite the declared 220–240 V rating; basic creepage is only recorded as greater than 2.0 mm, with pollution degree 3 selected and no material group identified.",
+      "evidence_reference": "Report pages 2, 54 and 83",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Reassess each insulation path using verified voltages, material group and measured distances."
+    },
+    {
+      "clause_id": "30.1; 30.2; 30.2.1; 30.2.3",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Relevant non-metallic parts are assessed for heat and fire resistance using the applicable pump provisions.",
+      "finding_reason": "Clause 30 and its tests are N/A and the appended table is blank, although the component list includes an insulating bushing; the basis for excluding relevant parts is not documented.",
+      "evidence_reference": "Report pages 55–58, 82 and 87",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify relevant non-metallic parts and provide applicable test results or substantiated exemptions."
+    },
+    {
+      "clause_id": "29.2",
+      "gap_type": "DOCUMENT_INTEGRITY",
+      "priority": "MEDIUM",
+      "normative_requirement": "Report attribution must be reliable for the evidence to support the assessment.",
+      "finding_reason": "PDF page 86 carries report number EN200622010S rather than EN201222034S, casting doubt on attribution of the creepage-table continuation.",
+      "evidence_reference": "Report pages 2 and 86",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "REPORT_EVIDENCE_CONFIRMED",
+      "required_action": "Obtain a verified replacement page and confirm the integrity of the complete report."
+    }
+  ],
+  "final_summary": {
+    "final_disposition": "REJECT_INSUFFICIENT_TECHNICAL_EVIDENCE",
+    "evaluation_conclusion": "The report cannot support certification of SPC55068 in its present form. The model, rating and supply discrepancies undermine attribution of the reported results, while missing immersion, earthing, cord and heat-and-fire evidence prevents a complete assessment against the supplied standards.",
+    "total_gaps": 21,
+    "recommended_action": "Obtain a verified replacement report based on the correctly identified SPC55068 and the confirmed applicable standard set, including all necessary test records and assessments."
+  }
+}

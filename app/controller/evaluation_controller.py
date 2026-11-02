@@ -63,21 +63,19 @@ class EvaluationController:
         rf = await self.db.get(ReportFile, ev.report_file_id)
         res = ev.result or {}
         ai = res.get("ai", {})
+        findings = ai.get("findings", ai.get("critical_findings", []))
         counts = {
-            "decision_points": len(ai.get("decision_points", [])),
-            "critical_findings": len(ai.get("critical_findings", [])),
-            "part2_coverage": len(ai.get("part2_coverage", [])),
-            "part1_corrections": len(ai.get("part1_corrections", [])),
-            "clause_rows": len(res.get("clause_review", [])),
+            "findings": len(findings),
+            **{f"findings_{k.lower().replace(' ', '_')}": v
+               for k, v in Counter(f.get("severity", "Not stated") for f in findings).items()},
         }
-        counts.update({f"clauses_{k}": v for k, v in
-                       Counter(r["assessment"].split("—")[0].strip() for r in res.get("clause_review", [])).items()})
         prefix = f"{self.settings.api_prefix}/evaluations/{ev.id}/download"
         return EvaluationOut(
             evaluation_id=ev.id, status=ev.status, from_cache=cached, report_id=ev.report_file_id,
             report_filename=rf.original_filename if rf else "", standards_used=ev.standard_names,
             final_verdict=ev.final_verdict, counts=counts, pdf_path=ev.pdf_path, xlsx_path=ev.xlsx_path,
-            download_pdf=f"{prefix}/pdf", download_xlsx=f"{prefix}/xlsx", warnings=warnings or [],
+            download_pdf=f"{prefix}/pdf", download_xlsx=f"{prefix}/xlsx",
+            download_json=f"{self.settings.api_prefix}/evaluations/{ev.id}/json", warnings=warnings or [],
         )
 
     async def get(self, evaluation_id: str, user_id: str | None) -> EvaluationOut:
@@ -89,6 +87,12 @@ class EvaluationController:
     async def rerender(self, evaluation_id: str, user_id: str) -> EvaluationOut:
         return await self.to_out(await self.service.rerender(evaluation_id, user_id))
 
+    async def as_json(self, evaluation_id: str, user_id: str | None) -> dict:
+        from app.service.evaluation_json import evaluation_json
+
+        ev = await self.service.get(evaluation_id, user_id)
+        return evaluation_json(self.service.document_of(ev))
+
     async def download(self, evaluation_id: str, fmt: str, user_id: str | None) -> Response:
         if fmt not in MEDIA:
             raise BadRequestError("format must be pdf or xlsx")
@@ -97,7 +101,8 @@ class EvaluationController:
         if not key:
             raise NotFoundError("File not generated")
         data = await self.storage.get(key)
-        name = key.rsplit("/", 1)[-1]
-        disposition = "inline" if fmt == "pdf" else "attachment"
+        stem, ext = key.rsplit("/", 1)[-1].rsplit(".", 1)
+        name = f"{stem}_{ev.id[:8].upper()}.{ext}"          # evaluation ref in the name -> no mix-up with old files
         return Response(data, media_type=MEDIA[fmt],
-                        headers={"Content-Disposition": f'{disposition}; filename="{name}"'})
+                        headers={"Content-Disposition": f'attachment; filename="{name}"',
+                                 "Cache-Control": "no-store"})   # browser/Postman never serves a stale copy

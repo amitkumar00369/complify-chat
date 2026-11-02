@@ -7,16 +7,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.settings import get_settings
 from app.models import ChatMessage, ChatSession, Evaluation, Report, ReportFile, Standard
-from app.service.ai_service import AIResult, AIService
+from app.service.ai_service import AIFilesMissingError, AIResult, AIService
 from app.service.chat_service import ChatService
 from app.service.report_service import ReportService
-from app.service.standard_service import StandardService
+from app.service.standard_service import StandardService, _number_key
 from app.service.storage_service import StorageBackend
-from app.utils.exceptions import BadRequestError
+from app.utils.exceptions import BadRequestError, StandardNotUploadedError
 from app.utils.pdf_utils import UploadedPdf, format_ref, parse_ref
 from app.utils.text_utils import standards_key
 
 logger = logging.getLogger(__name__)
+
+# Quality / lab / management-system standards a report only cites (lab accreditation, factory QMS).
+# A product is never evaluated against them, so they are not required as uploaded PDFs.
+_SYSTEM_STANDARDS = {"9001", "14001", "45001", "50001", "27001", "17025", "17065", "17020", "17021", "17024"}
+
+
+def _is_system_standard(ref: str) -> bool:
+    return _number_key(parse_ref(ref)[0]).split("-")[0] in _SYSTEM_STANDARDS
 
 
 @dataclass
@@ -96,6 +104,8 @@ class AnalysisService:
                 f"Too many standards after adding Part 1 parents ({len(selected)}); "
                 f"max {self.settings.max_standards_in_context}"
             )
+        if new_report and report_file:
+            await self._require_standards(report_file, selected, explicit=bool(requested))
         for s in selected:
             if s.part_type == "part2" and not s.parent_id:
                 warnings.append(f"{s.name}: Part 1 parent not uploaded, evaluating with Part 2 only")
@@ -141,39 +151,28 @@ class AnalysisService:
             )
             await self.db.commit()
 
-        already = set(chat.attached_openai_file_ids or [])
-        new_file_ids: list[str] = []
-        labels: list[str] = []
-        for std in selected:
-            fid = await self.standards.ensure_openai_file(std, self.ai)
-            if fid not in already:
-                new_file_ids.append(fid)
-                role = {"part1": "Part 1 - general requirements",
-                        "part2": "Part 2 - particular requirements, modifies Part 1"}.get(std.part_type, "standard")
-                labels.append(f"STANDARD {format_ref(std.name, std.edition)} ({role}): {std.original_filename}")
-        checks_text = None
-        if report_file:
-            fid = await self.reports.ensure_openai_file(report_file, self.ai)
-            if fid not in already:
-                new_file_ids.append(fid)
-                labels.append(f"REPORT: {report_file.original_filename}")
-                # first time this report enters the thread: give the AI the binding code checks
-                try:
-                    from app.service.objective_checks import analyse_report_pdf, checks_as_prompt
-                    _, facts, checks = await analyse_report_pdf(await self.reports.storage.get(report_file.storage_key),
-                                                                report_file.sha256)
-                    checks_text = checks_as_prompt(facts, checks)
-                except Exception as exc:  # checks must never block the chat
-                    logger.warning("Objective checks skipped: %s", exc)
+        for attempt in (1, 2):
+            try:
+                result, already, new_file_ids = await self._send(inp, chat, selected, report_file, new_thread)
+                break
+            except AIFilesMissingError as exc:
+                if attempt == 2:
+                    raise
+                # file ids belong to another OpenAI key/project (or were deleted): forget them,
+                # start a fresh thread and upload the PDFs again (once)
+                logger.warning("OpenAI files missing %s -> re-uploading and retrying once", exc.file_ids)
+                for item in [*selected, report_file]:
+                    if item is not None:
+                        item.openai_file_id = None
+                chat.attached_openai_file_ids = []
+                chat.openai_conversation_id = await self.ai.create_conversation(
+                    {"chat_id": chat.id, "user_id": inp.user_id})
+                new_thread = True
+                await self.db.commit()
 
-        prompt_text = _build_prompt(inp.query, selected, report_file, labels)
-        if new_thread:
-            prev = await self._previous_answer(chat)
-            if prev:   # chat started from a stored evaluation: give the AI that context once
-                prompt_text = "EARLIER EVALUATION IN THIS CHAT:\n" + prev[:30000] + "\n\n" + prompt_text
-        if checks_text:
-            prompt_text = checks_text + "\n\n" + prompt_text
-        result = await self.ai.ask(chat.openai_conversation_id, prompt_text, new_file_ids)
+        if getattr(result, "truncated", False):     # older ai_service.py has no such field
+            warnings.append(f"The AI answer was cut off at {self.settings.openai_max_output_tokens} output tokens; "
+                            "some findings may be missing. Raise OPENAI_MAX_OUTPUT_TOKENS and evaluate again.")
 
         # 6) persist
         chat.attached_openai_file_ids = list(already) + new_file_ids
@@ -194,6 +193,74 @@ class AnalysisService:
         if analysis:
             out.evaluation = await self._export(analysis, inp.user_id, chat, out.warnings)
         return out
+
+    async def _require_standards(self, report_file: ReportFile, selected: list[Standard], explicit: bool) -> None:
+        """A report is only evaluated when its standard PDFs are uploaded.
+        - nothing selected -> error
+        - standards picked from the report -> error only for a named standard that is NOT uploaded at all
+          (one that is uploaded but not used, e.g. a second Part 2, is not an error).
+        Send standard_ids to choose the standards yourself."""
+        detected = report_file.detected_standards or []
+        if not selected:
+            named = ", ".join(detected) if detected else "no standard number found in the report"
+            raise StandardNotUploadedError(
+                f"No standard PDF is uploaded for report '{report_file.original_filename}' "
+                f"(report names: {named}). Upload the standard(s) with POST /standards, "
+                "or send standard_ids of already uploaded standards.")
+        if explicit:
+            return
+        missing = [r for r in detected if not _is_system_standard(r)
+                   and await self.standards.find_ref(*parse_ref(r)) is None]
+        if missing:
+            raise StandardNotUploadedError(
+                f"Standard PDF not uploaded for report '{report_file.original_filename}': {', '.join(missing)}. "
+                f"Uploaded and matched: {', '.join(format_ref(s.name, s.edition) for s in selected)}. "
+                "Upload the missing standard(s) with POST /standards, or send standard_ids to evaluate "
+                "with the uploaded ones only.")
+
+    async def _send(self, inp, chat, selected, report_file, new_thread):
+        """Attach (new) files, build the prompt and call the AI. Returns (result, already, new_file_ids)."""
+        already = set(chat.attached_openai_file_ids or [])
+        new_file_ids: list[str] = []
+        labels: list[str] = []
+        for std in selected:
+            fid = await self.standards.ensure_openai_file(std, self.ai)
+            if fid not in already:
+                new_file_ids.append(fid)
+                role = {"part1": "general part",
+                        "part2": "particular part - adds to / replaces / modifies the general part"}.get(
+                    std.part_type, "standard")
+                labels.append(f"STANDARD {format_ref(std.name, std.edition)} ({role}): {std.original_filename}")
+        checks_text = None
+        if report_file:
+            fid = await self.reports.ensure_openai_file(report_file, self.ai)
+            if fid not in already:
+                new_file_ids.append(fid)
+                labels.append(f"REPORT: {report_file.original_filename}")
+                # first time this report enters the thread: give the AI the binding code checks
+                try:
+                    from app.service.objective_checks import analyse_report_pdf, checks_as_prompt
+                    from app.service.standard_clauses import registers_as_prompt, standard_registers
+                    from app.service.trf_parser import parse_clause_rows
+                    texts, facts, checks = await analyse_report_pdf(
+                        await self.reports.storage.get(report_file.storage_key), report_file.sha256)
+                    checks_text = checks_as_prompt(facts, checks)
+                    registers = await standard_registers(self.reports.storage, selected)
+                    register_text = registers_as_prompt(registers, parse_clause_rows(texts))
+                    if register_text:   # every Part 2 clause + where the report has it -> AI checks each one
+                        checks_text += "\n\n" + register_text
+                except Exception as exc:  # checks must never block the chat
+                    logger.warning("Objective checks skipped: %s", exc)
+
+        prompt_text = _build_prompt(inp.query, selected, report_file, labels)
+        if new_thread:
+            prev = await self._previous_answer(chat)
+            if prev:   # chat started from a stored evaluation: give the AI that context once
+                prompt_text = "EARLIER EVALUATION IN THIS CHAT:\n" + prev[:30000] + "\n\n" + prompt_text
+        if checks_text:
+            prompt_text = checks_text + "\n\n" + prompt_text
+        result = await self.ai.ask(chat.openai_conversation_id, prompt_text, new_file_ids)
+        return result, already, new_file_ids
 
     # ------------------------------------------------------------- export helpers
     async def _latest_evaluation_answer(self, report_file_id: str, standard_ids: list[str]) -> Report | None:
@@ -252,7 +319,7 @@ def _is_evaluation(md: str | None) -> bool:
     try:
         from app.service.md_evaluation_parser import parse_chat_markdown
 
-        return len(parse_chat_markdown(md).critical_findings) > 0
+        return len(parse_chat_markdown(md).findings) > 0
     except Exception:
         return False
 
@@ -284,8 +351,8 @@ def _build_prompt(query: str, standards: list[Standard], report: ReportFile | No
     if standards:
         lines.append("- Standards: " + ", ".join(format_ref(s.name, s.edition) for s in standards))
         if any(s.part_type == "part2" for s in standards):
-            lines.append("- Rule: Part 2 clauses replace/modify/add to Part 1 clauses with the same "
-                         "number; where Part 2 is silent, Part 1 applies.")
+            lines.append("- Rule: particular-part clauses replace/modify/add to general-part clauses with the same "
+                         "number; where the particular part is silent, the general part applies.")
     else:
         detected = ", ".join(report.detected_standards) if report and report.detected_standards else "none"
         lines.append(f"- Standards: none uploaded (report mentions: {detected})")

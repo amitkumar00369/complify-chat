@@ -79,6 +79,7 @@ class Settings(BaseSettings):
     @field_validator("database_url")
     @classmethod
     def _abs_sqlite(cls, v: str) -> str:
+        v = (v or "").strip().strip("'\"").strip()     # tolerate quotes / stray spaces in .env
         prefix = next((p for p in ("sqlite+aiosqlite:///", "sqlite:///") if v.startswith(p)), None)
         if prefix and not v.startswith(prefix + "/") and ":memory:" not in v:
             rel = v[len(prefix):]

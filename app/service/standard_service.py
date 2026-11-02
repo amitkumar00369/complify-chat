@@ -6,6 +6,7 @@ storage/standards/
     └── part2/IEC_60335-2-7_2012.pdf      (parent_id -> IEC 60335-1:2010)
 """
 import asyncio
+import re
 import logging
 from pathlib import Path
 
@@ -27,6 +28,45 @@ logger = logging.getLogger(__name__)
 PART_DIRS = {"part1": "part1", "part2": "part2", "part": "other"}
 
 
+def _strip_version(name: str) -> str:
+    """'IEC 60335-1-01' -> 'IEC 60335-1': a '-01' style suffix in a filename is a document version
+    (e.g. 'US_IEC_60335-1-01_01_2010-en-...pdf'), never an IEC part number (parts have no leading zero)."""
+    return re.sub(r"(?:\s*-\s*0\d+)+$", "", name)
+
+
+def _bad_name(name: str, original_filename: str | None) -> bool:
+    """Names saved by older code: a '-01' version suffix, or the whole filename used as the name."""
+    return _strip_version(name) != name or name == Path(original_filename or "").stem
+
+
+def _identify(detected, filename: str, edition: str | None) -> tuple[str, str | None]:
+    """Standard number of an uploaded standard PDF.
+    1. The PDF text decides ('IEC 60335-1:2010' on the cover). If the text names several standards,
+       the filename picks which one this file is.
+    2. No readable text (scanned / locked PDF): the number from the filename, without a '-01' version
+       suffix ('IEC_60065-_AUDIO_VIDEO_..._2014.pdf' -> 'IEC 60065', edition 2014)."""
+    stem = Path(filename).stem
+    from_name = [type(d)(_strip_version(d.name), d.edition)
+                 for d in detect_standards(re.sub(r"[_]+", " ", stem))]
+    if detected:
+        names = {_number_key(d.name) for d in from_name}
+        pick = next((d for d in detected if _number_key(d.name) in names), detected[0])
+    elif from_name:
+        pick = from_name[0]
+    else:
+        return stem, edition
+    if not (edition or pick.edition):
+        m = re.search(r"(?<!\d)((?:19|20)\d{2})(?!\d)", stem)      # '..._2014.pdf' -> edition 2014
+        edition = m.group(1) if m else None
+    return pick.name, edition or pick.edition
+
+
+def _number_key(name: str) -> str:
+    """'EN 60335-2-7' / 'IEC 60335-2-7' / 'BS EN 60335-2-7' -> '60335-2-7' (the number without the body)."""
+    m = re.search(r"\d{2,6}(?:\s*[-–]\s*\d{1,3})*", _strip_version(name or ""))
+    return re.sub(r"\s|–", lambda x: "-" if x.group() == "–" else "", m.group()) if m else ""
+
+
 class StandardService:
     def __init__(self, db: AsyncSession, storage: StorageBackend):
         self.db = db
@@ -41,19 +81,13 @@ class StandardService:
         sha = sha256_hex(data)
         existing = await self.db.scalar(select(Standard).where(Standard.sha256 == sha))
         if existing:
-            if not await self.storage.exists(existing.storage_key):      # DB row survived, file was deleted
-                logger.warning("Standard file missing on disk, restoring %s", existing.storage_key)
-                await self.storage.put(existing.storage_key, data,
-                                 metadata={"original_filename": filename, "standard": existing.name})
+            await self._repair_identity(existing, data, filename)     # name saved by older code -> fix
+            await self._relocate(existing, data, filename)
             return existing, False, []
 
         detected = detect_standards(await asyncio.to_thread(extract_text, data, 3))
         if not name:
-            if detected:
-                name = detected[0].name
-                edition = edition or detected[0].edition
-            else:
-                name = Path(filename).stem
+            name, edition = _identify(detected, filename, edition)
         ident = parse_standard_name(name)
 
         # Part 2 PDFs say which Part 1 edition they go with: "use with IEC 60335-1:2010"
@@ -87,6 +121,51 @@ class StandardService:
         await self.db.commit()
         logger.info("Registered standard %s:%s (%s) at %s", std.name, std.edition, std.part_type, key)
         return std, True, warnings
+
+    async def _repair_identity(self, std: Standard, data: bytes, filename: str) -> None:
+        """Same PDF uploaded again: identify it again from its text and fix a wrong name saved by older
+        code ('IEC 60335-2-45-01', 'IEC 60204' for an IEC 60204-1 PDF), then link Part 1 / Part 2 again."""
+        detected = detect_standards(await asyncio.to_thread(extract_text, data, 3))
+        name, edition = _identify(detected, std.original_filename or filename, None)
+        if name == std.name and (std.edition or not edition):
+            return
+        ident = parse_standard_name(name)
+        logger.info("Standard renamed %s -> %s (%s)", std.name, name, ident.part_type)
+        std.name, std.name_key, std.edition = name, standard_name_key(name), edition or std.edition
+        std.family, std.family_key = ident.family, standard_name_key(ident.family)
+        std.part_type, std.part_number = ident.part_type, ident.part_number
+        await self.db.flush()
+        if std.part_type == "part2":
+            await self._link_parent(std)
+        elif std.part_type == "part1":
+            await self._adopt_children(std)
+        await self.db.commit()
+
+    async def _relocate(self, std: Standard, data: bytes, filename: str) -> None:
+        """Same PDF uploaded again: make sure it sits at the CURRENT layout path
+        (STANDARDS_PREFIX/<family>/<part>/...). Rows saved under an older prefix (e.g. standards_pdf/)
+        are moved, and a file deleted from disk is restored."""
+        ident = parse_standard_name(std.name)
+        folder = self.settings.standards_prefix + safe_filename(std.family or ident.family) + "/"
+        if std.part_type in PART_DIRS:
+            folder += PART_DIRS[std.part_type] + "/"
+        if std.storage_key.startswith(folder) and await self.storage.exists(std.storage_key):
+            return
+        stem = safe_filename(std.name) + (f"_{safe_filename(std.edition)}" if std.edition else "")
+        key = f"{folder}{stem}.pdf"
+        other = await self.db.scalar(select(Standard.id).where(Standard.storage_key == key, Standard.id != std.id))
+        if other:
+            key = f"{folder}{stem}_{std.sha256[:8]}.pdf"
+        await self.storage.put(key, data, metadata={"original_filename": filename, "standard": std.name})
+        old = std.storage_key
+        if old != key and await self.storage.exists(old):
+            try:
+                await self.storage.delete(old)
+            except Exception as exc:                      # a stray old copy must not fail the upload
+                logger.warning("Could not remove old standard copy %s: %s", old, exc)
+        std.storage_key = key
+        await self.db.commit()
+        logger.info("Standard %s moved %s -> %s", std.name, old, key)
 
     async def _storage_key(self, ident, edition: str | None, sha: str) -> str:
         folder = self.settings.standards_prefix + safe_filename(ident.family) + "/"
@@ -175,10 +254,16 @@ class StandardService:
         return list(await self.db.scalars(stmt))
 
     async def find_ref(self, name: str, edition: str | None) -> Standard | None:
-        """Exact edition if uploaded, otherwise the newest file with that name."""
+        """Exact edition if uploaded, otherwise the newest file with that name.
+        Same number from another body counts too (EN / BS EN / AS/NZS 60335-2-7 = IEC 60335-2-7)."""
         stmt = (select(Standard).where(Standard.name_key == standard_name_key(name))
                 .order_by(Standard.created_at.desc()))
         rows = list(await self.db.scalars(stmt))
+        if not rows:
+            num = _number_key(name)
+            if num:
+                allrows = await self.db.scalars(select(Standard).order_by(Standard.created_at.desc()))
+                rows = [r for r in allrows if _number_key(r.name) == num]
         if not rows:
             return None
         if edition:
