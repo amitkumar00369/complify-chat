@@ -167,6 +167,8 @@ def detect_standards(text: str) -> list[DetectedStandard]:
     """Find standard references (IEC 60335-1:2020, EN 60335-2-7 ...) in order of appearance."""
     seen: dict[str, DetectedStandard] = {}
     for m in _STANDARD_RE.finditer(text):
+        if re.match(r"\s*[-–]\s*\d{4,}", text[m.end():m.end() + 12]):
+            continue        # 'IEC 60417-5172', 'ISO 7000-0434': a symbol number, not a standard part
         prefix = re.sub(r"\s+", " ", m.group(1))
         number = re.sub(r"\s+", "", m.group(2)).replace("–", "-")
         name = f"{prefix} {number}"

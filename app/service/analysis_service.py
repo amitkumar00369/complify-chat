@@ -10,22 +10,13 @@ from app.models import ChatMessage, ChatSession, Evaluation, Report, ReportFile,
 from app.service.ai_service import AIFilesMissingError, AIResult, AIService
 from app.service.chat_service import ChatService
 from app.service.report_service import ReportService
-from app.service.standard_service import StandardService, _number_key
+from app.service.standard_service import StandardService
 from app.service.storage_service import StorageBackend
 from app.utils.exceptions import BadRequestError, StandardNotUploadedError
 from app.utils.pdf_utils import UploadedPdf, format_ref, parse_ref
 from app.utils.text_utils import standards_key
 
 logger = logging.getLogger(__name__)
-
-# Quality / lab / management-system standards a report only cites (lab accreditation, factory QMS).
-# A product is never evaluated against them, so they are not required as uploaded PDFs.
-_SYSTEM_STANDARDS = {"9001", "14001", "45001", "50001", "27001", "17025", "17065", "17020", "17021", "17024"}
-
-
-def _is_system_standard(ref: str) -> bool:
-    return _number_key(parse_ref(ref)[0]).split("-")[0] in _SYSTEM_STANDARDS
-
 
 @dataclass
 class ChatInput:
@@ -105,7 +96,7 @@ class AnalysisService:
                 f"max {self.settings.max_standards_in_context}"
             )
         if new_report and report_file:
-            await self._require_standards(report_file, selected, explicit=bool(requested))
+            warnings += await self._check_standards(report_file, selected)
         for s in selected:
             if s.part_type == "part2" and not s.parent_id:
                 warnings.append(f"{s.name}: Part 1 parent not uploaded, evaluating with Part 2 only")
@@ -194,29 +185,23 @@ class AnalysisService:
             out.evaluation = await self._export(analysis, inp.user_id, chat, out.warnings)
         return out
 
-    async def _require_standards(self, report_file: ReportFile, selected: list[Standard], explicit: bool) -> None:
-        """A report is only evaluated when its standard PDFs are uploaded.
-        - nothing selected -> error
-        - standards picked from the report -> error only for a named standard that is NOT uploaded at all
-          (one that is uploaded but not used, e.g. a second Part 2, is not an error).
-        Send standard_ids to choose the standards yourself."""
-        detected = report_file.detected_standards or []
+    async def _check_standards(self, report_file: ReportFile, selected: list[Standard]) -> list[str]:
+        """Error ONLY when no standard at all is available for the report. Standards the report names
+        that are not uploaded do not stop the evaluation: they become CRITICAL findings (added by code in
+        the evaluation) and the AI evaluates against the uploaded ones. Returns warnings."""
+        cov = await self.standards.coverage(report_file.detected_standards)
+        logger.info(cov.log_lines(report_file.original_filename, selected))
         if not selected:
-            named = ", ".join(detected) if detected else "no standard number found in the report"
+            named = ", ".join(cov.named) if cov.named else "no standard number found in the report"
             raise StandardNotUploadedError(
                 f"No standard PDF is uploaded for report '{report_file.original_filename}' "
                 f"(report names: {named}). Upload the standard(s) with POST /standards, "
                 "or send standard_ids of already uploaded standards.")
-        if explicit:
-            return
-        missing = [r for r in detected if not _is_system_standard(r)
-                   and await self.standards.find_ref(*parse_ref(r)) is None]
-        if missing:
-            raise StandardNotUploadedError(
-                f"Standard PDF not uploaded for report '{report_file.original_filename}': {', '.join(missing)}. "
-                f"Uploaded and matched: {', '.join(format_ref(s.name, s.edition) for s in selected)}. "
-                "Upload the missing standard(s) with POST /standards, or send standard_ids to evaluate "
-                "with the uploaded ones only.")
+        if cov.missing:
+            return [f"Standard(s) named in the report but not uploaded: {', '.join(cov.missing)}. "
+                    f"Evaluated against {', '.join(format_ref(s.name, s.edition) for s in selected)}; "
+                    "each missing standard is a CRITICAL finding."]
+        return []
 
     async def _send(self, inp, chat, selected, report_file, new_thread):
         """Attach (new) files, build the prompt and call the AI. Returns (result, already, new_file_ids)."""
@@ -259,6 +244,13 @@ class AnalysisService:
                 prompt_text = "EARLIER EVALUATION IN THIS CHAT:\n" + prev[:30000] + "\n\n" + prompt_text
         if checks_text:
             prompt_text = checks_text + "\n\n" + prompt_text
+        if report_file:
+            cov = await self.standards.coverage(report_file.detected_standards)
+            if cov.missing:
+                prompt_text += ("\n\nSTANDARDS NAMED IN THE REPORT BUT NOT SUPPLIED: " + ", ".join(cov.missing)
+                                + ". Their text is not available: do not evaluate their clauses and do not add "
+                                "findings for their absence (code adds one CRITICAL finding per missing standard). "
+                                "Evaluate the report fully against the supplied standards.")
         result = await self.ai.ask(chat.openai_conversation_id, prompt_text, new_file_ids)
         return result, already, new_file_ids
 

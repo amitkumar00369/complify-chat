@@ -1,0 +1,352 @@
+{
+  "report_id": "ED251104331L",
+  "gaps": [
+    {
+      "clause_id": "—",
+      "gap_type": "STANDARD_NOT_SUPPLIED",
+      "priority": "CRITICAL",
+      "normative_requirement": "Compliance with ISO 2768-1 can only be confirmed against the text of that standard.",
+      "finding_reason": "The report states testing to ISO 2768-1, but ISO 2768-1 was not supplied for this review, so its requirements were not evaluated.",
+      "evidence_reference": "Report page 5",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Upload ISO 2768-1 and re-run the evaluation, or confirm it is outside the certification scope."
+    },
+    {
+      "clause_id": "4; 5.2",
+      "gap_type": "DOCUMENT_INTEGRITY",
+      "priority": "CRITICAL",
+      "normative_requirement": "Relevant compliance tests are carried out on the specified sample or permitted separate samples.",
+      "finding_reason": "The report refers to several appended result tables that are not present in the supplied 45-page report; PDF page 44 also repeats printed page number 43. The integrity and completeness of the test record cannot be established.",
+      "evidence_reference": "Report pages 1, 11, 13–14, 41 and 43–45",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Obtain the complete, correctly paginated laboratory report and all referenced result tables."
+    },
+    {
+      "clause_id": "19.7; 19.10",
+      "gap_type": "PRODUCT_IDENTITY_CONFLICT",
+      "priority": "CRITICAL",
+      "normative_requirement": "Appliances incorporating motors are subjected to applicable motor abnormal-operation tests, including the series-motor test.",
+      "finding_reason": "The component table lists a 2 000 W series motor, while the report states that there is no such motor and marks motor tests N. The tested construction cannot be reconciled.",
+      "evidence_reference": "Report pages 16–17 and 44",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Confirm the tested appliance’s motor configuration and provide the applicable motor-test evidence or a corrected component list."
+    },
+    {
+      "clause_id": "25.8; 25.10",
+      "gap_type": "NUMERIC_MISMATCH",
+      "priority": "CRITICAL",
+      "normative_requirement": "Supply-cord conductors must meet the applicable minimum cross-sectional area, and a class I cord must include the specified earthing core.",
+      "finding_reason": "The report records 0.75 mm², but the component list states a two-core 0.5 mm² cord. At the declared 2 000 W and 220–240 V, the minimum applicable conductor area is 0.75 mm² even under the short portable-cord allowance; the two-core listing also conflicts with the claimed class I earthing arrangement.",
+      "evidence_reference": "Report pages 1, 5, 33 and 44",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "REQUIREMENT_CONFIRMED",
+      "required_action": "Identify the actual cord and cores and demonstrate compliance or replace and retest the cord."
+    },
+    {
+      "clause_id": "3.1.9; 5.103; 11.7",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "The fryer is initially filled with unused vegetable oil, operated at the minimum indicated level, and tested until steady conditions are established.",
+      "finding_reason": "The heating record refers to durations for other appliance types and does not establish the oil type, oil level, control setting or attainment of steady conditions.",
+      "evidence_reference": "Report pages 11–12 and 43",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Document the fryer-specific operating conditions and repeat affected tests if those conditions were not used."
+    },
+    {
+      "clause_id": "7.103",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "The fryer must be marked with minimum and maximum oil levels.",
+      "finding_reason": "The report does not assess the required oil-level markings; the marking-plate copy alone does not establish whether they appear elsewhere on the appliance.",
+      "evidence_reference": "Report pages 2 and 5–6",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Inspect and record both oil-level markings on the tested fryer."
+    },
+    {
+      "clause_id": "7.12; 7.12.1",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "The instructions must contain fryer-specific warnings, maximum batch load, user-maintenance instructions and the water-jet prohibition.",
+      "finding_reason": "A general instruction pass refers to a product manual, but neither the manual nor an assessment of the specified fryer warnings and batch load is supplied.",
+      "evidence_reference": "Report pages 7–9",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide and assess the tested model’s complete instructions against the fryer-specific requirements."
+    },
+    {
+      "clause_id": "10.1",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Stabilized power input at rated voltage and normal operation must remain within the applicable Table 1 deviations.",
+      "finding_reason": "A pass refers to an absent table; measured power input, test voltage and deviation are unavailable.",
+      "evidence_reference": "Report pages 1 and 11",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide the referenced power-input measurements and applicable deviations."
+    },
+    {
+      "clause_id": "11.2",
+      "gap_type": "INCORRECT_TEST_CONDITION",
+      "priority": "HIGH",
+      "normative_requirement": "Heating and combined appliances normally placed on a floor or table are placed in a test corner unless a particular-part provision changes the installation.",
+      "finding_reason": "The report records a floor placement but also passes a test away from the test-corner walls; the applicable fryer installation and test-corner arrangement are not established.",
+      "evidence_reference": "Report page 11",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Document the actual installation and repeat the heating test using the applicable test-corner arrangement if necessary."
+    },
+    {
+      "clause_id": "11.3; 11.8",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Oil temperature is measured at the specified location and must not exceed 200 °C during normal heating.",
+      "finding_reason": "The temperature table contains no oil-temperature result or measurement position, although the general heating result is passed.",
+      "evidence_reference": "Report pages 11–12 and 43",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Measure and report maximum oil temperature at the specified location under the required heating conditions."
+    },
+    {
+      "clause_id": "13.2; 13.3; 15.3; 16.2; 16.3",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "The appliance must meet applicable leakage-current and electric-strength requirements, including after humidity treatment.",
+      "finding_reason": "The report claims passes but the referenced leakage-current, electric-strength and humidity tables are absent; measured currents, test voltages and humidity conditions cannot be verified.",
+      "evidence_reference": "Report pages 13–14",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Supply the complete test tables, conditions and results and reassess them against the applicable limits."
+    },
+    {
+      "clause_id": "14; 29.1",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Clearances must meet the applicable minimum values or, where permitted, withstand the impulse-voltage test.",
+      "finding_reason": "The report claims passes for transient overvoltages and clearances but the referenced clearance table is absent, and no impulse-test details are supplied.",
+      "evidence_reference": "Report pages 13 and 41",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide the clearance measurements, applicable limits and any required impulse-test results."
+    },
+    {
+      "clause_id": "15.1.1",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "IPX0 through IPX4 fryers are subjected to the specified splash test for 5 min.",
+      "finding_reason": "The report identifies IPX0 but marks the ingress test N and provides no fryer-specific splash-test results.",
+      "evidence_reference": "Report pages 5 and 13",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Perform and document the specified 5 min splash test and subsequent checks."
+    },
+    {
+      "clause_id": "15.2",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Fryers must be constructed so that normal-use liquid spillage does not affect electrical insulation.",
+      "finding_reason": "The spillage requirement and overfilling test are marked N without a fryer-specific justification; a separate electric-strength pass does not establish the spillage treatment.",
+      "evidence_reference": "Report pages 13–14",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Perform and document the applicable spillage assessment and subsequent insulation checks."
+    },
+    {
+      "clause_id": "19.2; 19.3; 19.13",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "The fryer is subjected to the prescribed abnormal oil conditions, and applicable oil temperatures must not exceed 230 °C.",
+      "finding_reason": "The report claims abnormal-operation passes using an empty-appliance entry but does not record the two fryer-specific oil conditions or oil temperatures.",
+      "evidence_reference": "Report pages 15 and 19",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Perform and document the fryer-specific abnormal tests, including oil temperatures and ignition observations."
+    },
+    {
+      "clause_id": "19.5",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Applicable class I appliances with tubular sheathed or embedded heating elements undergo the element-to-sheath fault test, subject to specified exceptions.",
+      "finding_reason": "The test is marked N without identifying the heating-element construction or establishing an applicable exception.",
+      "evidence_reference": "Report pages 16 and 24",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify the element construction and document the test or the applicable exception."
+    },
+    {
+      "clause_id": "19.11.2; 19.12",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Applicable electronic fault conditions are evaluated and, where safety depends on a miniature fuse-link, its protection is verified.",
+      "finding_reason": "The report records passes without identifying the circuits, simulated faults, measured fuse current or fuse rating; it also omits assessment of the listed partial turn-on fault condition.",
+      "evidence_reference": "Report pages 17–19",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide circuit identification, fault-by-fault results and applicable fuse-protection measurements."
+    },
+    {
+      "clause_id": "22.101",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "Thermal cut-outs protecting heating circuits must provide the specified non-self-resetting and all-pole disconnection characteristics.",
+      "finding_reason": "Report clause 22.101 instead addresses fixed water boilers; it does not assess the fryer thermal-cut-out requirement.",
+      "evidence_reference": "Report pages 22 and 27",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify the heating-circuit protective devices and assess their construction and operation against 22.101."
+    },
+    {
+      "clause_id": "22.102; 22.103",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "Red indications are restricted to danger or alarm functions, and hot-oil spillage onto parts exceeding 300 °C must be adequately prevented.",
+      "finding_reason": "The report entries numbered 22.102 and 22.103 address an espresso coffee-maker and a feeding-bottle heater, not the fryer requirements.",
+      "evidence_reference": "Report page 27",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Inspect and document the fryer’s indication colours and protection against hot-oil contact with hot parts."
+    },
+    {
+      "clause_id": "22.108; 22.109",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "Heating elements must disconnect under the specified removal or swing-up conditions, and the fryer must provide the specified oil-surge allowance.",
+      "finding_reason": "The report’s entries for these clause numbers concern boiling-water appliances and kettles; no fryer element-disconnection assessment or surge-volume-to-batch-load measurement is recorded.",
+      "evidence_reference": "Report pages 27–28",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Assess element disconnection and measure the fryer’s surge allowance against its recommended batch load."
+    },
+    {
+      "clause_id": "22.111",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "Fryer baskets and applicable movable heating elements must be safely retained in the raised position.",
+      "finding_reason": "The photographed fryer includes a basket, but the report contains no assessment of its retention in the raised position.",
+      "evidence_reference": "Report page 45",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Inspect and manually test the applicable raised-position retention."
+    },
+    {
+      "clause_id": "22.114",
+      "gap_type": "CLAUSE_NOT_ADDRESSED",
+      "priority": "HIGH",
+      "normative_requirement": "Portable appliances must prevent small items entering underside openings and reaching live parts, with the specified minimum distances.",
+      "finding_reason": "The report indicates a mass below 3 kg and describes portable-appliance tests, but contains no underside-opening assessment.",
+      "evidence_reference": "Report pages 11 and 33",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Inspect underside openings and record the applicable distances to live parts."
+    },
+    {
+      "clause_id": "24.1; 24.1.3",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Components must meet applicable safety requirements and switches required for compliance must meet the specified cycle requirements.",
+      "finding_reason": "A 250 V, 3 A switch is listed, but its circuit function, load and suitability in the appliance are not established; the report marks switch compliance N.",
+      "evidence_reference": "Report pages 29 and 44",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify the switch function and load and provide component approval or applicable test evidence."
+    },
+    {
+      "clause_id": "25.7",
+      "gap_type": "INCORRECT_TEST_CONDITION",
+      "priority": "HIGH",
+      "normative_requirement": "Fryer supply cords must be oil-resistant and at least equivalent to the specified ordinary polychloroprene-sheathed cord.",
+      "finding_reason": "The report passes an ordinary PVC cord and marks the polychloroprene cord entry N; no evidence of the required oil resistance or equivalence is supplied.",
+      "evidence_reference": "Report pages 32–33 and 44",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Verify the installed cord against the fryer-specific oil-resistance and cord-type requirements."
+    },
+    {
+      "clause_id": "25.15; 25.17; 25.18; 25.20",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "A type Y supply cord requires an adequate anchorage, restricted anchorage access and the specified additional insulation.",
+      "finding_reason": "The report identifies type Y attachment and a supply cord but marks the anchorage, pull-and-torque test and additional insulation N without justification.",
+      "evidence_reference": "Report pages 7 and 31–35",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Inspect and test the actual type Y cord arrangement and record the results."
+    },
+    {
+      "clause_id": "27.2; 27.3; 27.4",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Earthing connections must be secured against loosening and corrosion, and the earth conductor must remain effective if the cord slips.",
+      "finding_reason": "The report declares a class I cord-connected appliance but marks these earthing assessments N without reasons.",
+      "evidence_reference": "Report pages 5, 31 and 38–39",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Inspect and document the earthing terminal, corrosion protection and conductor arrangement."
+    },
+    {
+      "clause_id": "27.5",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Earth-continuity resistance must not exceed 0.1 Ω under the specified test conditions.",
+      "finding_reason": "The report claims a pass but does not record the measured resistance, test current or tested points.",
+      "evidence_reference": "Report page 39",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide the earth-continuity measurements and test conditions for each relevant accessible metal part."
+    },
+    {
+      "clause_id": "28.1",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Applicable screws and nuts used for electrical and earthing connections must withstand the specified mechanical test.",
+      "finding_reason": "The report marks the torque test N despite claiming electrical and earthing connections; no construction-based exemption is recorded.",
+      "evidence_reference": "Report pages 39–40",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify applicable fixings and document the required torque tests or valid exemptions."
+    },
+    {
+      "clause_id": "29.2",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "The fryer microenvironment is pollution degree 3 and insulation CTI is at least 250 unless the specified protection from pollution applies.",
+      "finding_reason": "The report uses an unrelated conditional pollution-degree entry and provides neither CTI evidence nor justification for a protected microenvironment.",
+      "evidence_reference": "Report pages 41 and 43",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Establish the applicable microenvironment and provide CTI or proof-tracking evidence and creepage measurements."
+    },
+    {
+      "clause_id": "30.1",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Relevant non-metallic parts must withstand the ball-pressure test at the temperature determined from the applicable temperature rises and minimum temperatures.",
+      "finding_reason": "The report records an enclosure test at 75 °C and an internal plastic-enclosure rise of 65.0 K, but does not establish which material and location were tested or the basis for the selected temperature.",
+      "evidence_reference": "Report pages 42–43",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify each tested part and substantiate the ball-pressure temperature from the relevant measured rise."
+    },
+    {
+      "clause_id": "30.2.1",
+      "gap_type": "INCORRECT_TEST_CONDITION",
+      "priority": "HIGH",
+      "normative_requirement": "The particular standard specifies a 650 °C glow-wire test under 30.2.1.",
+      "finding_reason": "The report records the enclosure glow-wire test at 550 °C and passes it; this is below the specified fryer test temperature.",
+      "evidence_reference": "Report page 42",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Test the relevant parts at 650 °C or provide evidence supporting an applicable permitted alternative."
+    }
+  ],
+  "final_summary": {
+    "final_disposition": "REPORT_CORRECTION_REPLACEMENT_REQUIRED_PRODUCT_COMPLIANCE_NOT_DETERMINED_CERTIFICATION_HOLD",
+    "evaluation_conclusion": "The supplied report does not demonstrate compliance of model 20 with US IEC 60335-1:2010 as modified by US IEC 60335-2-37:2002. Product non-conformity cannot be conclusively established from the conflicting component records alone, but the missing and incorrectly applied evidence blocks a certification decision.",
+    "total_gaps": 31,
+    "recommended_action": "Obtain a complete, corrected laboratory report identifying the tested construction and documenting all applicable inspections and tests, including any necessary retesting, before certification proceeds."
+  }
+}

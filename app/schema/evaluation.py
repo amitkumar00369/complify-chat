@@ -18,7 +18,8 @@ FinalVerdict = Literal[
 Severity = Literal["Critical", "High", "Medium", "Low", "Not stated"]
 GapType = Literal["PRODUCT_IDENTITY_CONFLICT", "NUMERIC_MISMATCH", "LIMIT_EXCEEDED", "INCORRECT_TEST_CONDITION",
                   "MISSING_EVIDENCE", "CLAUSE_NOT_ADDRESSED", "UNJUSTIFIED_NOT_APPLICABLE",
-                  "STANDARD_VERSION_MISMATCH", "DOCUMENT_INTEGRITY", "OTHER", "NOT_STATED"]
+                  "STANDARD_VERSION_MISMATCH", "STANDARD_NOT_SUPPLIED", "DOCUMENT_INTEGRITY", "OTHER",
+                  "NOT_STATED"]
 
 
 class _Strict(BaseModel):

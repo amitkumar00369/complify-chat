@@ -8,6 +8,7 @@ storage/standards/
 import asyncio
 import re
 import logging
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from sqlalchemy import select
@@ -19,13 +20,48 @@ from app.service.ai_service import AIService
 from app.service.storage_service import StorageBackend
 from app.utils.exceptions import NotFoundError, StorageError
 from app.utils.pdf_utils import (
-    detect_standards, extract_text, parse_standard_name, safe_filename, sha256_hex,
+    detect_standards, extract_text, format_ref, parse_ref, parse_standard_name, safe_filename, sha256_hex,
     standard_name_key,
 )
 
 logger = logging.getLogger(__name__)
 
 PART_DIRS = {"part1": "part1", "part2": "part2", "part": "other"}
+
+# Standards a report only CITES, never one the product is tested against:
+#   quality / environment / security management systems, lab and certification-body accreditation,
+#   and graphical-symbol / safety-sign catalogues (marking clauses refer to "IEC 60417-5172", "ISO 7000-0434").
+# They are never required as uploaded PDFs and never become a "standard not supplied" finding.
+REFERENCE_ONLY = {
+    "9001", "14001", "45001", "50001", "27001",                    # management systems
+    "17025", "17065", "17020", "17021", "17024",                   # accreditation (ISO/IEC 17xxx)
+    "60417", "7000", "3864", "7010",                               # graphical symbols, safety signs
+}
+
+
+def is_reference_only(ref: str) -> bool:
+    return _number_key(parse_ref(ref)[0]).split("-")[0] in REFERENCE_ONLY
+
+
+@dataclass
+class StandardCoverage:
+    """Which of the standards a report names are uploaded."""
+    named: list[str] = field(default_factory=list)          # as detected in the report ("IEC 60335-1:2010")
+    ignored: list[str] = field(default_factory=list)        # reference-only (see REFERENCE_ONLY)
+    matched: list[tuple[str, "Standard"]] = field(default_factory=list)   # (named ref, uploaded standard)
+    missing: list[str] = field(default_factory=list)        # named, not reference-only, not uploaded
+
+    def log_lines(self, report_name: str, used: list["Standard"]) -> str:
+        used_txt = [f"{format_ref(s.name, s.edition)} ({s.part_type}) -> {s.storage_key}" for s in used]
+        return "\n".join([
+            f"Standards for report '{report_name}':",
+            f"  named in report : {', '.join(self.named) or 'none found'}",
+            f"  ignored         : {', '.join(self.ignored) or '-'}   (cited only: QMS / accreditation / symbols)",
+            f"  matched upload  : {', '.join(f'{r} = {format_ref(s.name, s.edition)}' for r, s in self.matched) or '-'}",
+            f"  NOT uploaded    : {', '.join(self.missing) or '-'}"
+            + ("   -> CRITICAL finding each, evaluation continues" if self.missing and used else ""),
+            "  used for AI     : " + ("; ".join(used_txt) or "NONE"),
+        ])
 
 
 def _strip_version(name: str) -> str:
@@ -252,6 +288,19 @@ class StandardService:
             stmt = stmt.where(Standard.family_key == standard_name_key(family))
         stmt = stmt.order_by(Standard.family, Standard.part_type, Standard.name).limit(limit).offset(offset)
         return list(await self.db.scalars(stmt))
+
+    async def coverage(self, detected: list[str] | None) -> StandardCoverage:
+        cov = StandardCoverage(named=list(detected or []))
+        for ref in cov.named:
+            if is_reference_only(ref):
+                cov.ignored.append(ref)
+                continue
+            std = await self.find_ref(*parse_ref(ref))
+            if std is None:
+                cov.missing.append(ref)
+            else:
+                cov.matched.append((ref, std))
+        return cov
 
     async def find_ref(self, name: str, edition: str | None) -> Standard | None:
         """Exact edition if uploaded, otherwise the newest file with that name.

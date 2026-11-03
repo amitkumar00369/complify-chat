@@ -27,7 +27,7 @@ from app.service.storage_service import StorageBackend
 from app.service.objective_checks import analyse_report_pdf, apply_objective_checks, checks_as_prompt
 from app.service.standard_clauses import registers_as_prompt, standard_registers
 from app.service.trf_parser import ClauseRow, parse_clause_rows
-from app.utils.exceptions import BadRequestError, ForbiddenError, NotFoundError
+from app.utils.exceptions import BadRequestError, ForbiddenError, NotFoundError, StandardNotUploadedError
 from app.utils.pdf_utils import UploadedPdf, format_ref, parse_ref, safe_filename
 from app.utils.text_utils import standards_key
 
@@ -86,9 +86,10 @@ class EvaluationService:
         if not selected and chat and chat.active_standard_ids:
             selected = await self.standards.get_many(chat.active_standard_ids, ignore_missing=True)
         if not selected:
-            raise BadRequestError(
-                "No standard available for this report. Upload the standards first. Report mentions: "
-                + (", ".join(rf.detected_standards) or "none"))
+            raise StandardNotUploadedError(
+                f"No standard PDF is uploaded for report '{rf.original_filename}' (report names: "
+                + (", ".join(rf.detected_standards) or "no standard number found") + "). "
+                "Upload the standard(s) with POST /standards, or send standard_ids.")
         if len(selected) > self.settings.max_standards_in_context:
             raise BadRequestError(f"Too many standards ({len(selected)}); max {self.settings.max_standards_in_context}")
         for s in selected:
@@ -146,6 +147,7 @@ class EvaluationService:
             file_ids.append(await self.reports.ensure_openai_file(rf, self.ai))
             ai_result, meta = await self.ai.evaluate(prompt, file_ids)
         ai_result = apply_objective_checks(ai_result, facts, checks)   # code wins over AI text
+        ai_result = await self._add_missing_standards(ai_result, rf, texts)
         ai_result = await self._verify(ai_result, await self.storage.get(rf.storage_key), selected)
 
         # 6) build + render + store
@@ -198,6 +200,7 @@ class EvaluationService:
         meta = report_meta_from_text("\n".join(texts[:3]))
         meta.setdefault("standards_claimed", ", ".join(rf.detected_standards or []) or "not stated in review")
         ai = apply_objective_checks(parse_chat_markdown(md, meta), facts, checks)
+        ai = await self._add_missing_standards(ai, rf, texts)
         ai = await self._verify(ai, data, selected)
         pages = len(texts)
 
@@ -241,6 +244,38 @@ class EvaluationService:
         ev.pdf_path, ev.xlsx_path = await self._render_and_store(doc, rf, selected)
         await self.db.commit()
         return ev
+
+    async def _add_missing_standards(self, ai: EvaluationAI, rf: ReportFile, texts: list[str]) -> EvaluationAI:
+        """One CRITICAL finding (by code) per standard the report names that is not uploaded.
+        Reference-only standards (QMS, accreditation, graphical symbols) are not counted."""
+        from app.schema.evaluation import Finding
+
+        cov = await self.standards.coverage(rf.detected_standards)
+        if not cov.missing:
+            return ai
+        ai = ai.model_copy(deep=True)
+        have = {f.clause + f.gap_type + f.finding for f in ai.findings}
+        for ref in cov.missing:
+            name = parse_ref(ref)[0]
+            m = re.search(r"\d{2,6}(?:\s*[-–]\s*\d{1,3})*", name)
+            pat = r"\s*[-–]\s*".join(re.escape(x) for x in re.split(r"\s*[-–]\s*", m.group(0))) if m else None
+            pages = [str(i) for i, t in enumerate(texts, 1) if pat and re.search(pat + r"(?!\d)", t)]
+            ai.findings = [f for f in ai.findings                     # drop an AI row for the same absence
+                           if not (f.gap_type == "STANDARD_NOT_SUPPLIED" and name.split()[-1] in f.finding)]
+            row = Finding(
+                clause="—", gap_type="STANDARD_NOT_SUPPLIED", severity="Critical",
+                finding=(f"The report states testing to {ref}, but {name} was not supplied for this review, "
+                         f"so its requirements were not evaluated."),
+                reason=f"Compliance with {ref} can only be confirmed against the text of that standard.",
+                required_action=f"Upload {ref} and re-run the evaluation, or confirm it is outside the "
+                                f"certification scope.",
+                pages=", ".join(pages[:5]) or "not located",
+                report_quote=name, standard_quote="not in supplied standards",
+                code_verified=True, report_check="checked by code",
+                standard_check="standard not supplied")
+            if row.clause + row.gap_type + row.finding not in have:
+                ai.findings.insert(0, row)
+        return ai
 
     async def _verify(self, ai: EvaluationAI, report_pdf: bytes, selected: list[Standard]) -> EvaluationAI:
         """Search every AI quote in the report / standard PDFs (code, no AI)."""
