@@ -35,7 +35,7 @@ app.add_middleware(
 app.add_middleware(RequestTimingMiddleware)
 
 register_exception_handlers(app)
-app.include_router(api_router, prefix=settings.api_prefix)
+app.include_router(api_router, prefix=settings.api_prefix or "/api/v1/complify")
 
 
 @app.get("/health", tags=["health"])

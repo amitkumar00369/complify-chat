@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     # --- app ---
     app_name: str = "Complify Chat API"
     environment: str = "dev"
-    api_prefix: str = "/api/v1"
+    api_prefix: str = "/api/v1/complify"
     log_level: str = "INFO"
 
     # --- database: PostgreSQL (postgresql+asyncpg://...) or SQLite file in ./data for local dev ---

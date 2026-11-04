@@ -1,0 +1,165 @@
+{
+  "report_id": "ED253584626L",
+  "gaps": [
+    {
+      "clause_id": "4.1.2",
+      "gap_type": "DOCUMENT_INTEGRITY",
+      "priority": "CRITICAL",
+      "normative_requirement": "Test samples must be representative of the apparatus supplied to the user or be the actual apparatus ready for shipment.",
+      "finding_reason": "The particulars record steam discharge and a detachable liquid container for the declared speaker, without explaining their relationship to the photographed sample; attribution of the assessment to model 2 is therefore uncertain.",
+      "evidence_reference": "Report pages 1, 3–4 and 36",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Verify the tested sample’s identity and replace the inconsistent particulars with a traceable product description."
+    },
+    {
+      "clause_id": "4.2.2; 4.2.12",
+      "gap_type": "INCORRECT_TEST_CONDITION",
+      "priority": "HIGH",
+      "normative_requirement": "Normal operating tests use the specified supply-voltage variation and, where applicable, a test supply with suitable current capacity and characteristics.",
+      "finding_reason": "The 5 V rated product was tested for heating at 4.5 V and 5 V; the record does not establish whether 5.5 V was less unfavourable or identify the supply characteristics needed to assess the USB supply arrangement.",
+      "evidence_reference": "Report pages 1, 33 and 35",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Establish the applicable supply arrangement and test or justify the most unfavourable voltage and supply characteristics."
+    },
+    {
+      "clause_id": "4.1.4; 7.1.1",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Temperature measurements must use the specified positioning, and the apparatus must also meet Table 3 when tested on an open bench.",
+      "finding_reason": "The report refers to the user manual but does not identify the heating-test positioning or record a separate open-bench assessment.",
+      "evidence_reference": "Report pages 5 and 33",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Document the test positioning and provide the required open-bench results."
+    },
+    {
+      "clause_id": "4.1.6; 4.2.5; 7.1.1",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "An audio amplifier is operated at one-eighth of non-clipped output power using the specified signal or an allowed alternative.",
+      "finding_reason": "The table records 0.10 W as one-eighth of maximum output, but does not record the measured non-clipped output power or identify the test signal and its characteristics.",
+      "evidence_reference": "Report page 33",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide the non-clipped output-power determination and identify the signal used for the heating test."
+    },
+    {
+      "clause_id": "5.2",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Apparatus supplied by d.c. only must be marked with the specified d.c. supply symbol.",
+      "finding_reason": "The marking-plate copy shows \"DC 5V 1A\" but does not show the specified d.c. symbol, although the report assigns a pass to the voltage and symbol item.",
+      "evidence_reference": "Report pages 2 and 5",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide and verify a corrected marking plate bearing the applicable supply symbol."
+    },
+    {
+      "clause_id": "7.1.2; 7.1.6",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Temperature rises must not exceed the applicable Table 3 values, considering the part and relevant conditions.",
+      "finding_reason": "The table assigns a 55 K limit to the battery and outside enclosure, but does not identify the battery chemistry, enclosure material or basis for those limits; the measured rises are 5.0 K and 5.3 K respectively.",
+      "evidence_reference": "Report pages 33 and 35",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify the materials and battery chemistry and substantiate the applicable temperature-rise limits."
+    },
+    {
+      "clause_id": "8.12; 8.13; 14.4; 14.11; 19.7",
+      "gap_type": "DOCUMENT_INTEGRITY",
+      "priority": "HIGH",
+      "normative_requirement": "The supplied edition contains specific construction, component and mounting requirements under its own clause numbering.",
+      "finding_reason": "The report uses a different clause structure: for example, it labels 8.12 void although the supplied standard contains a fastening requirement there, and battery and mounting provisions are also shifted.",
+      "evidence_reference": "Report pages 7–8, 11–14 and 18",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Issue a report correctly mapped to IEC 60065:2014 and reassess the applicable requirements."
+    },
+    {
+      "clause_id": "9.1.7",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "The enclosure must be sufficiently resistant to external forces and compliance is checked by the specified tests.",
+      "finding_reason": "The external-force assessment is marked N without a reason or test record.",
+      "evidence_reference": "Report pages 8–9",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Perform and record the applicable enclosure force tests or provide a standard-based justification."
+    },
+    {
+      "clause_id": "10.3; 10.4",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Safety must not be impaired by humidity encountered in intended use, with humidity treatment followed by the applicable insulation tests.",
+      "finding_reason": "Humidity treatment is marked N without explanation, and the insulation resistance and electric strength tables contain no results.",
+      "evidence_reference": "Report pages 9 and 34",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide the humidity-treatment assessment and subsequent applicable insulation-test results, or justify each exclusion."
+    },
+    {
+      "clause_id": "12.1.3; 12.1.5",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Portable apparatus is subject to the specified vibration test and, at 7 kg or less, the drop test.",
+      "finding_reason": "The report identifies the apparatus as portable and below 7 kg, yet marks both vibration and drop tests N without justification.",
+      "evidence_reference": "Report pages 3, 10 and 17",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Conduct and document the vibration and drop tests on the representative apparatus."
+    },
+    {
+      "clause_id": "12.1.6",
+      "gap_type": "UNJUSTIFIED_NOT_APPLICABLE",
+      "priority": "HIGH",
+      "normative_requirement": "Moulded or formed thermoplastic enclosures must undergo the specified stress-relief assessment.",
+      "finding_reason": "The report identifies screws fixing a plastic enclosure but marks the thermoplastic enclosure stress-relief test N without identifying the material or construction.",
+      "evidence_reference": "Report pages 10 and 16",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Identify the enclosure material and perform the stress-relief test if it is moulded or formed thermoplastic."
+    },
+    {
+      "clause_id": "4.3.1; 4.3.5; 11.2",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Relevant fault conditions are applied individually, with consequential faults, to check that hazardous overheating does not occur.",
+      "finding_reason": "Several fault tests are recorded, but the report provides no circuit-based fault selection or justification for omitting component short-circuit and disconnection conditions.",
+      "evidence_reference": "Report pages 9 and 34–35",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide the circuit analysis and results or justified exclusions for the relevant fault conditions."
+    },
+    {
+      "clause_id": "14.11.1; 14.11.3",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Batteries must be mounted to prevent hazardous gas accumulation and insulation damage, and applicable charging or lithium currents must remain within manufacturer limits.",
+      "finding_reason": "The report records battery overcharge testing but lists a 1.5 V R03 battery and marks battery mounting and charging-current assessments N; the battery chemistry, rechargeability and current limits are not established.",
+      "evidence_reference": "Report pages 14 and 34–35",
+      "evidence_confidence": "MEDIUM",
+      "verification_status": "REQUIREMENT_CONFIRMED",
+      "required_action": "Identify the installed battery and charging arrangement and provide the applicable mounting and current-limit assessments."
+    },
+    {
+      "clause_id": "14.11.4; 14.11.5",
+      "gap_type": "MISSING_EVIDENCE",
+      "priority": "HIGH",
+      "normative_requirement": "Applicable special batteries must withstand the specified mould stress-relief and drop tests without releasing electrolyte.",
+      "finding_reason": "Battery mould stress relief and drop tests are marked P, but no sample details, conditioning, drop results or evidence establishing applicability are recorded.",
+      "evidence_reference": "Report pages 14 and 35",
+      "evidence_confidence": "HIGH",
+      "verification_status": "CONFIRMED_REPORT_DEFECT",
+      "required_action": "Provide the test records and applicability basis for both battery assessments."
+    }
+  ],
+  "final_summary": {
+    "final_disposition": "REPORT_CORRECTION_REPLACEMENT_REQUIRED_PRODUCT_COMPLIANCE_NOT_DETERMINED_CERTIFICATION_HOLD",
+    "evaluation_conclusion": "The supplied report does not provide a reliable basis for demonstrating compliance of speaker model 2 with IEC 60065:2014. Sample identity, supply and battery configuration, mechanical testing, humidity treatment, fault selection and temperature-limit justification require resolution and reassessment.",
+    "total_gaps": 14,
+    "recommended_action": "Obtain a correctly attributed, edition-aligned replacement report with the missing assessments and supporting test records before certification proceeds."
+  }
+}
